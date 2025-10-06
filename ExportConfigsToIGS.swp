@@ -1,0 +1,53 @@
+' ==============================================
+' ExportConfigsToIGES.swp
+' ----------------------------------------------
+' Loops through all configurations in the active
+' SolidWorks part and exports each one as an IGES.
+' ==============================================
+
+Option Explicit
+
+Sub main()
+    Dim swApp As SldWorks.SldWorks
+    Dim swModel As SldWorks.ModelDoc2
+    Dim swConfig As SldWorks.Configuration
+    Dim vConfigNames As Variant
+    Dim configName As String
+    Dim basePath As String
+    Dim exportPath As String
+    Dim i As Integer
+
+    Set swApp = Application.SldWorks
+    Set swModel = swApp.ActiveDoc
+
+    If swModel Is Nothing Then
+        MsgBox "No active document found. Please open a part file."
+        Exit Sub
+    End If
+
+    ' Get folder path of the current part
+    basePath = Left(swModel.GetPathName, InStrRev(swModel.GetPathName, "\"))
+
+    ' Get all configuration names
+    vConfigNames = swModel.GetConfigurationNames
+
+    ' Loop through configurations
+    For i = 0 To UBound(vConfigNames)
+        configName = vConfigNames(i)
+        Debug.Print "Exporting configuration: " & configName
+
+        ' Show configuration
+        swModel.ShowConfiguration2 configName
+        swModel.EditRebuild3
+
+        ' Set export path
+        exportPath = basePath & configName & ".igs"
+
+        ' Export as IGES
+        swModel.SaveAs3 exportPath, 0, 2  ' 0=default format, 2=silent
+
+    Next i
+
+    MsgBox "All configurations exported as IGES files in: " & basePath
+
+End Sub

@@ -95,7 +95,7 @@ class Sampler():
         # insert first column for config names
         df.insert(0, "", self.config_names)        
 
-        df.to_excel(filename, index=False)
+        df.to_excel(filename, index=False, startrow=1)
         print(f"Saved results to {filename}")
 
 
