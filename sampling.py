@@ -68,17 +68,21 @@ class Sampler():
         """Return a list of descriptive configuration names"""
         try:
             # Name each config after the value of its first parameter
-            parameter = self.param_names[0]
-            filenames = [f"{parameter}_{row[0]}" for row in self.samples]
+            parameter = self.param_names[0].strip().replace(' ', '_').lower()
+            filenames = []
+            for i, row in enumerate(self.samples):
+                # replace decimal values with underscores
+                param_value = str(row[0]).replace('.', '_')
+                filenames.append(f"C{i+1}_{parameter}_{param_value}")
         except:
             # if something goes wrong just name them numerically
-            filenames = [f"Config_{str(i+1)}" for i in range(len(self.samples))]
+            filenames = [f"C{str(i+1)}" for i in range(len(self.samples))]
 
         self.config_names = filenames
 
     def export_to_excel(self, project_name : str):
         """
-        Takes ndarray of samples from LHS and exports to Excel in a format that SolidWorks can import directly.
+        Takes the numpy array of samples from LHS and exports to Excel in a format that SolidWorks can import directly.
         """
         # Remove whitespace from project name
         project_file_name = project_name.strip().replace(' ', '_').lower()
