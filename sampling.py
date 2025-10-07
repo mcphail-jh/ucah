@@ -89,8 +89,13 @@ class Sampler():
 
         filename = f"{project_file_name}_design_table.xlsx"
 
+        # IMPORTANT: Modify parameter names to start with $VALUE@ and end with @EQUATIONS so SW recognizes that they are global variables
+        # TODO: Possibly remove this feature if we want to drive dimensions that are not global variables
+        # since this considers every parameter as a global variable
+
+        global_variables = [f"$VALUE@{parameter}@EQUATIONS" for parameter in self.param_names]
         # make sample/config data into dataframe
-        df = pd.DataFrame(self.samples, columns=self.param_names)
+        df = pd.DataFrame(self.samples, columns=global_variables)
 
         # insert first column for config names
         df.insert(0, "", self.config_names)        
@@ -99,11 +104,10 @@ class Sampler():
         print(f"Saved results to {filename}")
 
 
-
 def main():
     
     NUM_SAMPLES = 10  # Number of configurations to generate
-    NUM_DECIMALS = 3 # only considers samples up to `NUM_DECIMALS` decimals
+    NUM_DECIMALS = 2 # only considers samples up to `NUM_DECIMALS` decimals
     INPUT_FILE = 'param_template.xlsx'
     PROJECT_NAME = "Flat Missile"
 
