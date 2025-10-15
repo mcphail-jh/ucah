@@ -9,6 +9,7 @@ UCAH Hypersonic Design Competition Capstone Group - Documents
 import time
 import shutil
 import os
+from Case import Case
 
 
 RESULTS_FILE = 'output.json'
@@ -30,10 +31,9 @@ class CaseManager():
         os.makedirs(self.cfd_folder, exist_ok=True)
         os.makedirs(self.cad_folder, exist_ok=True)
 
-        # dictionary of each case on OneDrive. Format: {'case_name': 'DONE'/'IN PROGRESS'/'NOT DONE'}
-        self.case_status = {}
-        # stores the cases queued to be ran
-        self.queue = []
+        # List of Case objects pulled from OneDrive
+        self.remote_cases = []
+
         # name of the OneDrive database folder
         self.db_name = DB_NAME
         
@@ -43,28 +43,31 @@ class CaseManager():
         
         self.onedrive_folder = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\" + DB_NAME)
 
-    def _pull_remote_status(self):
+    def _update_remote_cases(self):
         '''
         Checks OneDrive for the status of each case. Helpful for selecting cases which are not being worked on.
         '''
-        new_cases = {}
-        case_folders = os.listdir(self.onedrive_folder)
-        for case in case_folders:
-            case_path = os.path.join(self.onedrive_folder, case)
+        new_cases = []
+        case_names = os.listdir(self.onedrive_folder)
+        for case_name in case_names:
+            case_path = os.path.join(self.onedrive_folder, case_name)
             # if the item is in fact a subfolder, open it
             if os.path.isdir(case_path):
+                # create a new Case object
+                case = Case(case_name, case_path)
                 case_files = os.listdir(case_path)
-                # case 1: if lock.txt is present, the case is IN PROGRESS
+                # if lock.txt is present, the case is IN PROGRESS
                 if LOCK_FILE in case_files:
-                    new_cases[case] = 'IN PROGRESS'
-                # case 2: 
+                    case.set_status('IN PROGRESS')
                 elif RESULTS_FILE in case_files:
-                    new_cases[case] = 'DONE'
+                    case.set_status('DONE')
                 else:
-                    new_cases[case] = 'NOT DONE'
+                    case.set_status('NOT DONE')
+
+                new_cases.append(case)
         
-        # overwrite dictionary with new values
-        self.cases = new_cases
+        # overwrite list with updated cases
+        self.remote_cases = new_cases
 
 
     def upload_cad(self):
@@ -75,7 +78,7 @@ class CaseManager():
             print("Error: Invalid/Missing Project Folder: ", self.project_folder)
             return
         
-        igs_files = [f for f in os.listdir(self.project_folder) if f.endswith('.igs') or f.endswith('.json')]
+        igs_files = [f for f in os.listdir(self.cad_folder) if f.endswith('.igs') or f.endswith('.json')]
 
         for file in igs_files:
             # make a new folder with the file's name (minus the .igs suffix)
@@ -85,7 +88,7 @@ class CaseManager():
             os.makedirs(destination_directory, exist_ok=True)
 
             # get full path to the source file
-            source_file = os.path.join(self.project_folder, file)
+            source_file = os.path.join(self.cad_folder, file)
 
             try:
                 # Copy the file
@@ -111,58 +114,34 @@ class CaseManager():
         `lock` - *bool* 
         * If True, adds a lock.txt file to the remote folder, preventing other users from running that case
         '''
-
+        # initialize list of selected cases to return
+        queue = []
         # get the latest status of the remote folders
-        self._pull_remote_status()
+        self._update_remote_cases()
 
         # loop through all cases
-        selected_cases = []
-        for case in self.case_status.keys():
+        num_new_cases = 0
+        for case in self.remote_cases:
             # select ones that are available
-            if self.case_status[case] == "NOT DONE":
-                selected_cases.append(case)
-                print(f"Selected available case {case} ({len(selected_cases)}/{n_cases})")
+            if case.status == "NOT DONE":
+                num_new_cases += 1
+                print(f"Selected available case {case} ({num_new_cases}/{n_cases})")
 
                 if lock:
-                    self._lock(case)
+                    case.lock()
 
                 # download the files
-                local_path = self._download(case)
-                
-                # append the full path to the queue
-                self.queue.append(local_path)
+                local_path = self._download(case.name)
+                # assign local path to the case object and add to the queue
+                case.set_local_path(local_path)
+                queue.append(case)
             
             # stop when n cases have been selected
-            if len(selected_cases) == n_cases:
+            if num_new_cases == n_cases:
                 break
         
-        return self.queue
+        return queue
 
-    
-    def _lock(self, case):
-        '''
-        Takes a case folder name, and adds a lock.txt file
-        '''
-        remote_path = os.path.join(self.onedrive_folder, case)
-        # create empty lock.txt file
-        with open(f"{remote_path}\\lock.txt", 'w') as f:
-            pass
-
-    def _unlock(self, case):
-        '''
-        Takes a case folder name, and removes the lock.txt file from it
-        '''
-        try:
-            remote_path = os.path.join(self.onedrive_folder, case)
-            lock_path = f"{remote_path}\\lock.txt"
-            # remove lock.txt file
-            if os.path.exists(lock_path):
-                os.remove(lock_path)
-        except OSError as e:
-            print(f"Error deleting lock in '{case}': {e}")
-        else:
-            print(f"Case '{case}' was not locked.")
-    
 
     def _download(self, folder_name):
         '''
@@ -183,15 +162,13 @@ class CaseManager():
             destination = os.path.join(local_path, f)
             try:
                 shutil.copy(source, destination)
-                print(f"File '{f}' copied successfully to '{remote_path}'")
+                #print(f"File '{f}' copied successfully to '{remote_path}'")
             except FileNotFoundError:
                 print(f"Error: Source file '{f}' not found.")
             except Exception as e:
                 print(f"An error occurred: {e}")
         return local_path
-
-
-
+    
 
     # ------------ setter functions ------------
 
@@ -204,10 +181,42 @@ if __name__ == '__main__':
 
 
     # test code
+    PROJECT_NAME = "Prism"
+    project_folder = os.path.expanduser(f'~/Documents/{PROJECT_NAME}')
+    # start the manager in our project folder
+    manager = CaseManager(project_folder)
+    
     '''
-    manager = CaseManager('C:\\Users\\psh8ce\\Documents\\Prism')
-    manager.upload()
+    # upload CAD files
+    manager.upload_cad()
     time.sleep(5)
-    manager.pull_onedrive_status()
-    print(manager.case_status)
+    manager._update_remote_cases()
+
+    for case in manager.remote_cases:
+        print(case)
+
     '''
+
+    '''
+    # once files are uploaded, pull 3 cases
+    queue = manager.pull_cases(3)
+    time.sleep(5) # simulate working on the cases
+    for case in queue:
+        print(case)
+
+    # wait for unlocks to sync
+    time.sleep(5)
+    # print the status
+    manager._update_remote_cases()
+
+    for case in manager.remote_cases:
+        print(case)
+    
+    '''
+    manager._update_remote_cases()
+    for case in manager.remote_cases:
+        print(case)
+
+
+
+    
