@@ -128,9 +128,9 @@ def main():
     NUM_DECIMALS = 1 # only considers samples up to `NUM_DECIMALS` decimals
     INPUT_FILE = 'param_template.xlsx'
     PROJECT_NAME = "Prism"
-    EXPORT_FOLDER = os.path.expanduser(f'~/Documents/{PROJECT_NAME}') # folder to export the design table and all configuration json files
-    if not os.path.exists(EXPORT_FOLDER):
-        os.mkdir(EXPORT_FOLDER)
+    EXPORT_FOLDER = os.path.expanduser(f'~/Documents/{PROJECT_NAME}/CAD') # folder to export the design table and all configuration json files
+    
+    os.makedirs(EXPORT_FOLDER, exist_ok=True)
 
     sampler = Sampler()
     sampler.import_params(INPUT_FILE)
