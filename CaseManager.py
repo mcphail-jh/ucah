@@ -6,24 +6,30 @@ REQUIRED: You must be logged into OneDrive and have the UCAH folder added as a s
 UCAH Hypersonic Design Competition Capstone Group - Documents
 
 """
+import time
 import shutil
 import os
 
+
 RESULTS_FILE = 'output.json'
 LOCK_FILE = 'lock.txt'
+# real code will change this to 
+DB_NAME = "TestDatabase"
 
 
 class CaseManager():
 
     def __init__(self):
+
         self.project_folder = None
         # dictionary of each case on OneDrive. Format: {'case_name': 'DONE'/'IN PROGRESS'/'NOT DONE'}
         self.cases = {}
-
-        try:
-            self.onedrive_dir = os.path.expanduser("~\\'OneDrive - University of Virginia'\\'UCAH Hypersonic Design Competition Capstone Group - Documents'\\Database")
-        except:
-            print("Error: Could not find OneDrive database.\nEnsure OneDrive is signed in and you have the UCAH Hypersonic Design Competition Capstone Group - Documents shortcut")
+        
+        # check that OneDrive is signed in and has the proper shortcut
+        if not os.path.isdir(os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\")):
+            return "Error: Could not find OneDrive database.\nEnsure OneDrive is signed in and you have the UCAH Hypersonic Design Competition Capstone Group - Documents shortcut"
+        
+        self.onedrive_dir = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\" + DB_NAME)
 
 
     def pull_cases(self):
@@ -58,7 +64,7 @@ class CaseManager():
             print("Error: Invalid/Missing Project Folder: ", self.project_folder)
             return
         
-        igs_files = [f for f in os.listdir(self.project_folder) if f.endswith('.igs')]
+        igs_files = [f for f in os.listdir(self.project_folder) if f.endswith('.igs') or f.endswith('.json')]
 
         for file in igs_files:
             # make a new folder with the file's name (minus the .igs suffix)
@@ -80,8 +86,18 @@ class CaseManager():
                 print(f"An error occurred: {e}")
 
 
-    # setter functions
+    # ------------ setter functions ------------
     def set_project_folder(self, project_folder):
         self.project_folder = project_folder
 
 
+if __name__ == '__main__':
+    # test code
+    '''
+    manager = CaseManager()
+    manager.set_project_folder('C:\\Users\\psh8ce\\Documents\\Prism')
+    manager.upload()
+    time.sleep(5)
+    manager.pull_cases()
+    print(manager.cases)
+    '''

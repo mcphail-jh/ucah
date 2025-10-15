@@ -14,7 +14,7 @@
  - Data files will be saved along with a JSON summary including # of iterations and relevant values for the objective function.
 
 ### Summarize Results (WIP)
-1. Run a script (or python for Excel?) to check each folder's status
+1. Run a script (Power Automate) to update each folder's status in a master excel sheet
 2. Details will include whether or not the case has been meshed/ran, values from the summary JSON, and a timestamp of the last sync
 
 

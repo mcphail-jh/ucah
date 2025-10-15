@@ -110,6 +110,9 @@ class Sampler():
 
         df.to_excel(file_path, index=False, startrow=1)
 
+        # rename the first column to "Name" for json
+        df = df.rename(columns={"": "Name"})
+
         # save each row as a JSON file
         for sample in self.sample_names:
             row = df.loc[sample]
@@ -120,13 +123,12 @@ class Sampler():
 
 
 def main():
-    
+    # --------- EDIT THESE PARAMETERS --------
     NUM_SAMPLES = 10  # Number of configurations to generate
-    NUM_DECIMALS = 2 # only considers samples up to `NUM_DECIMALS` decimals
+    NUM_DECIMALS = 1 # only considers samples up to `NUM_DECIMALS` decimals
     INPUT_FILE = 'param_template.xlsx'
-    PROJECT_NAME = "Flat Missile"
-    # folder to export the design table and all configuration json files
-    EXPORT_FOLDER = os.path.expanduser(f'~/Documents/{PROJECT_NAME}')
+    PROJECT_NAME = "Prism"
+    EXPORT_FOLDER = os.path.expanduser(f'~/Documents/{PROJECT_NAME}') # folder to export the design table and all configuration json files
     if not os.path.exists(EXPORT_FOLDER):
         os.mkdir(EXPORT_FOLDER)
 
