@@ -19,7 +19,7 @@
 
 
 
-### Prospective Design Process
+## Prospective Design Process
 1. Base Solidworks Part
     - Paramaterize + upper and lower bounds
 2. LHS to get configurations

@@ -123,19 +123,25 @@ class Sampler():
 
 
 def main():
+    # -------------- FIRST -------------------
+    # Create a folder in Documents with the same name as your CAD file. Change PROJECT_NAME to the name of this folder
+    # Place the inputs excel file and CAD part in this folder
+
     # --------- EDIT THESE PARAMETERS --------
     NUM_SAMPLES = 10  # Number of configurations to generate
     NUM_DECIMALS = 1 # only considers samples up to `NUM_DECIMALS` decimals
-    INPUT_FILE = 'param_template.xlsx'
-    PROJECT_NAME = "Prism"
-    EXPORT_FOLDER = os.path.expanduser(f'~/Documents/{PROJECT_NAME}') # folder to export the design table and all configuration json files
-    if not os.path.exists(EXPORT_FOLDER):
-        os.mkdir(EXPORT_FOLDER)
-
+    PROJECT_NAME = "Prism" # name of the project folder in Documents
+    INPUT_FILE = 'param_template.xlsx' # name of the excel file holding the parameters and bounds
+    
+    project_folder = os.path.expanduser(f'~/Documents/{PROJECT_NAME}')
+    export_folder = os.path.join(project_folder, 'CAD')
+    os.makedirs(export_folder, exist_ok=True)
+    input_file = os.path.join(project_folder, INPUT_FILE)
+    
     sampler = Sampler()
-    sampler.import_params(INPUT_FILE)
+    sampler.import_params(input_file)
     sampler.lhs(NUM_SAMPLES, NUM_DECIMALS)
-    sampler.export(PROJECT_NAME, EXPORT_FOLDER)
+    sampler.export(PROJECT_NAME, export_folder)
 
 if __name__ == "__main__":
     main()
