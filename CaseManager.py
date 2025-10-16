@@ -187,7 +187,7 @@ if __name__ == '__main__':
     manager = CaseManager(project_folder)
     
     '''
-    # upload CAD files
+    # Test 1: upload CAD files
     manager.upload_cad()
     time.sleep(5)
     manager._update_remote_cases()
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     '''
 
     '''
-    # once files are uploaded, pull 3 cases
+    # Test 2: once files are uploaded, pull 3 cases
     queue = manager.pull_cases(3)
     time.sleep(5) # simulate working on the cases
     for case in queue:
@@ -212,10 +212,11 @@ if __name__ == '__main__':
     for case in manager.remote_cases:
         print(case)
     
-    '''
+    
     manager._update_remote_cases()
     for case in manager.remote_cases:
         print(case)
+    '''
 
 
 
