@@ -1,10 +1,11 @@
 import ansys.fluent.core as pyfluent
 import os
 
-working_directory = r"C:\Users\qvu2hx\Downloads\Capstone\ucah\Flat_Bottom_Winged_Missile\auto_files"
+working_directory = r"C:\auto_files"
 
 geometry_file = "Winged_Missile_2024.IGS"
-meshing_file =  "setup.msh.h5"
+meshing_file =  "FFF.msh.h5"
+orig_geo = "FFF.agdb"
 setup_file = "setup.cas.h5"
 results_file = "new_results.cas.h5"
 
@@ -17,7 +18,7 @@ results_file = os.path.join(working_directory,results_file)
 print("meshing file")
 print(meshing_file)
 # Launch Fluent in meshing mode
-mesher = pyfluent.launch_fluent(mode="meshing",ui_mode=pyfluent.UIMode.GUI, processor_count=22)
+mesher = pyfluent.launch_fluent(mode="meshing",ui_mode=pyfluent.UIMode.GUI, processor_count=8)
 
 # If you need to read an existing meshing case while in meshing mode,
 # use the TUI file command available on the meshing session.
@@ -26,15 +27,18 @@ mesher = pyfluent.launch_fluent(mode="meshing",ui_mode=pyfluent.UIMode.GUI, proc
 mesher.tui.file.read_mesh(meshing_file)
 
 # Clear any existing zones/mesh data
-input()
+
 mesher.tui.mesh.clear_mesh()
-input()
 # Assuming your new geometry file is named 'new_geometry.stl'
 new_geometry_file = os.path.join(working_directory,geometry_file)
 
-# Read the new geometry into the mesher
-mesher.tui.file.import_.cad(new_geometry_file)
 
+# Read the new geometry into the mesher
+mesher.workflow.TaskObject['Import Geometry'].Revert()
+mesher.workflow.TaskObject['Import Geometry'].Arguments.set_state({r'FileName': r'C:/auto_files/Winged_Missile_2024.IGS',r'ImportCadPreferences': {r'MaxFacetLength': 0,},r'LengthUnit': r'm',r'NumParts': 1,})
+mesher.workflow.TaskObject['Import Geometry'].Execute()
+
+input()
 # If using the Watertight Geometry workflow, often you need to update the
 # boundary/region definitions after loading a new geometry:
 mesher.tui.meshing.update_geometry_definitions()
