@@ -2,10 +2,10 @@ import os
 from pathlib import Path
 
 # Import the core components from the PyAnsys Geometry library
-from ansys.geometry.core import Modeler
+from ansys.geometry.core.connection import launcher as launch
 from ansys.geometry.core.misc import UNITS
 from ansys.geometry.core.math import Plane
-
+print(dir(launch))
 # --- Configuration ---
 
 # NOTE: Replace this with the actual path to your CAD file (e.g., .step, .x_t, .iges)
@@ -26,7 +26,7 @@ def run_geometry_script():
 
     # 1. Initialize the Geometry Service (Connects to SpaceClaim/Discovery backend)
     print("Attempting to connect to Ansys Geometry Service...")
-    modeler = Modeler()
+    modeler = launch.launch_modeler_with_spaceclaim()
     print(dir(modeler))
     print(f"Service connection successful. Modeler initialized in {modeler.units.name} units.")
     input()
