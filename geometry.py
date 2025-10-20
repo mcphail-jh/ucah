@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
+import time
 
 # Import the core components from the PyAnsys Geometry library
 from ansys.geometry.core.connection import launcher as launch
+from ansys.geometry.core.modeler import Modeler
 from ansys.geometry.core.misc import UNITS
 from ansys.geometry.core.math import Plane
-print(dir(launch))
+print(dir(Modeler))
 # --- Configuration ---
 
 # NOTE: Replace this with the actual path to your CAD file (e.g., .step, .x_t, .iges)
@@ -25,11 +27,14 @@ def run_geometry_script():
         # return
 
     # 1. Initialize the Geometry Service (Connects to SpaceClaim/Discovery backend)
-    print("Attempting to connect to Ansys Geometry Service...")
-    modeler = launch.launch_modeler_with_spaceclaim()
-    print(dir(modeler))
-    print(f"Service connection successful. Modeler initialized in {modeler.units.name} units.")
+    #print(f"Service connection successful. Modeler initialized in {modeler.units.name} units.")
     input()
+
+    # launch geometry
+    model = launch.launch_modeler_with_spaceclaim()
+    design = model.create_design()
+    print(dir(design))
+  
     try:
         # 2. Import the CAD File
         print(f"Importing CAD file: {CAD_FILE_PATH.name}...")
@@ -38,7 +43,7 @@ def run_geometry_script():
         # Using a dummy file path if the real one isn't found to let the script proceed
         # in a non-execution environment, but will warn the user.
         if CAD_FILE_PATH.exists():
-            design = modeler.import_design(CAD_FILE_PATH)
+            design = Modeler.import_design(CAD_FILE_PATH)
         else:
             # Mocking a basic design object for code demonstration purposes
             # (In a live environment, this block would not be needed)
