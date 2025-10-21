@@ -9,6 +9,7 @@ from ansys.geometry.core.math import Plane
 
 # --- Configuration ---
 # NOTE: Replace this with the actual path to your CAD file (e.g., .step, .x_t, .iges)
+ansys_version = 251
 CAD_FILE_PATH = Path("C:/auto_files/Winged_Missile_2024.IGS")
 EXPORT_DESIGN_NAME = "flat bottom geo"
 
@@ -20,7 +21,7 @@ def run_geometry_script():
     # 1. Initialize the Geometry Service (Connects to SpaceClaim/Discovery backend)
     # launch geometry
     print("Launching Geometry Service...")
-    model = launch.launch_modeler_with_spaceclaim()
+    model = launch.launch_modeler_with_spaceclaim(product_version=ansys_version)
     print("Geometry Service launched successfully.")
   
     # 2. Import the CAD File
@@ -66,7 +67,7 @@ def run_geometry_script():
     print("Named selections created successfully.")
 
     # 5. Export the Design with Named Selections
-    design.export_to_pmdb(EXPORT_DESIGN_NAME)
+    design.export_to_scdocx(EXPORT_DESIGN_NAME)
 
     print("\nScript finished successfully.")
 
