@@ -24,20 +24,23 @@ mesher = pyfluent.launch_fluent(mode="meshing",ui_mode=pyfluent.UIMode.GUI, proc
 # use the TUI file command available on the meshing session.
 # The Meshing session object doesn't expose `file` like the solver session does,
 # which caused the AttributeError you saw.
-mesher.tui.file.read_mesh(meshing_file)
+#mesher.tui.file.read_mesh(meshing_file)
 
 # Clear any existing zones/mesh data
 
-mesher.tui.mesh.clear_mesh()
+#mesher.tui.mesh.clear_mesh()
 # Assuming your new geometry file is named 'new_geometry.stl'
 new_geometry_file = os.path.join(working_directory,geometry_file)
 
 
 # Read the new geometry into the mesher
-mesher.workflow.TaskObject['Import Geometry'].Revert()
-mesher.workflow.TaskObject['Import Geometry'].Arguments.set_state({r'FileName': r'C:/auto_files/Winged_Missile_2024.IGS',r'ImportCadPreferences': {r'MaxFacetLength': 0,},r'LengthUnit': r'm',r'NumParts': 1,})
+mesher.workflow.InitializeWorkflow(WorkflowType=r'Watertight Geometry')
+mesher.workflow.TaskObject['Import Geometry'].Arguments.set_state({r'FileName': r'C:/Users/qvu2hx/ucah/flat bottom geo/parametric_v4.scdocx',r'ImportCadPreferences': {r'MaxFacetLength': 0,},r'LengthUnit': r'mm',})
 mesher.workflow.TaskObject['Import Geometry'].Execute()
-
+print(vars(mesher))
+mesher.workflow.TaskObject['Add Local Sizing'].AddChildAndUpdate(DeferUpdate=False)
+mesher.workflow.TaskObject['Add Local Sizing'].Arguments.set_state({r'AddChild': r'yes',r'BOICellsPerGap': 1,r'BOICurvatureNormalAngle': 18,r'BOIExecution': r'Face Size',r'BOIFaceLabelList': [r'inlet'],r'BOIGrowthRate': 1.2,r'BOISize': 6,r'BOIZoneorLabel': r'label',r'DrawSizeControl': True,})
+mesher.workflow.TaskObject['Add Local Sizing'].AddChildAndUpdate(DeferUpdate=False)
 input()
 # If using the Watertight Geometry workflow, often you need to update the
 # boundary/region definitions after loading a new geometry:

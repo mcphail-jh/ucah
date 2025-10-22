@@ -10,7 +10,7 @@ from ansys.geometry.core.math import Plane
 # --- Configuration ---
 # NOTE: Replace this with the actual path to your CAD file (e.g., .step, .x_t, .iges)
 ansys_version = 251
-CAD_FILE_PATH = Path("C:/auto_files/Winged_Missile_2024.IGS")
+CAD_FILE_PATH = Path("C:/Users/qvu2hx/ucah/parametric_v4.IGS")
 EXPORT_DESIGN_NAME = "flat bottom geo"
 
 def run_geometry_script():
@@ -41,15 +41,16 @@ def run_geometry_script():
 
     # 3. Access the Imported Geometry
     bodies = design.bodies
-    print(dir(design))
-    print(len(bodies))
+    
 
     # identify name surface regions
-    inlet = [bodies[0]] + bodies[2:5]
+    inlet = [bodies[0]] + bodies[2:6]
+    print(inlet[-1])
+    
     outlet = [bodies[1]]
-    vehicle_faces = bodies[6:-1]
-
-
+    vehicle_faces = bodies[6:]
+    print(vehicle_faces[0])
+    print(len(bodies))
     print(type(bodies))
     if not bodies:
         print("Error: Imported design contains no solid bodies. Exiting.")
@@ -61,9 +62,9 @@ def run_geometry_script():
 
     # 4. Create Named Selection 1: Whole Body Selection
     # Select the entire body for a simulation part
-    design.create_named_selection("inlet",bodies=inlet)
-    design.create_named_selection("outlet",bodies=outlet)
-    design.create_named_selection("vehicle",bodies=vehicle_faces)
+    design.create_named_selection("inlet",faces=inlet)
+    design.create_named_selection("outlet",faces=outlet)
+    design.create_named_selection("vehicle",faces=vehicle_faces)
     print("Named selections created successfully.")
 
     # 5. Export the Design with Named Selections
