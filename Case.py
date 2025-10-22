@@ -48,7 +48,5 @@ class Case():
                 os.remove(lock_path)
         except OSError as e:
             print(f"Error deleting lock in '{self.name}': {e}")
-        else:
-            print(f"Case '{self.name}' was not locked.")
         
         self.locked = False

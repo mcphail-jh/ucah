@@ -59,6 +59,7 @@ class CaseManager():
                 # if lock.txt is present, the case is IN PROGRESS
                 if LOCK_FILE in case_files:
                     case.set_status('IN PROGRESS')
+                    case.locked = True
                 elif RESULTS_FILE in case_files:
                     case.set_status('DONE')
                 else:
@@ -93,7 +94,7 @@ class CaseManager():
             try:
                 # Copy the file
                 shutil.copy(source_file, destination_directory)
-                print(f"File '{source_file}' copied successfully to '{destination_directory}'")
+                #print(f"File '{source_file}' copied successfully to '{destination_directory}'")
             except FileNotFoundError:
                 print(f"Error: Source file '{source_file}' not found.")
             except Exception as e:
@@ -141,6 +142,23 @@ class CaseManager():
                 break
         
         return queue
+    
+    def unlock_all(self):
+        '''
+        Unlocks all locked cases in the OneDrive database by removing their lock.txt files
+        '''
+        self._update_remote_cases()
+        for case in self.remote_cases:
+            if case.locked:
+                case.unlock()
+
+    def force_unlock_all(self):
+        '''
+        Unlocks ALL cases in the OneDrive database by removing any lock.txt files
+        '''
+        self._update_remote_cases()
+        for case in self.remote_cases:
+            case.unlock()
 
 
     def _download(self, folder_name):
