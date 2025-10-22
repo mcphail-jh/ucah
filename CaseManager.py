@@ -181,42 +181,11 @@ if __name__ == '__main__':
 
 
     # test code
-    PROJECT_NAME = "Prism"
-    project_folder = os.path.expanduser(f'~/Documents/{PROJECT_NAME}')
-    # start the manager in our project folder
-    manager = CaseManager(project_folder)
-    
     '''
-    # upload CAD files
-    manager.upload_cad()
+    manager = CaseManager()
+    manager.set_project_folder('C:\\Users\\psh8ce\\Documents\\Prism')
+    manager.upload()
     time.sleep(5)
-    manager._update_remote_cases()
-
-    for case in manager.remote_cases:
-        print(case)
-
+    manager.pull_cases()
+    print(manager.cases)
     '''
-
-    '''
-    # once files are uploaded, pull 3 cases
-    queue = manager.pull_cases(3)
-    time.sleep(5) # simulate working on the cases
-    for case in queue:
-        print(case)
-
-    # wait for unlocks to sync
-    time.sleep(5)
-    # print the status
-    manager._update_remote_cases()
-
-    for case in manager.remote_cases:
-        print(case)
-    
-    '''
-    manager._update_remote_cases()
-    for case in manager.remote_cases:
-        print(case)
-
-
-
-    
