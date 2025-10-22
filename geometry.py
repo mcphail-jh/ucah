@@ -10,7 +10,7 @@ from ansys.geometry.core.math import Plane
 # --- Configuration ---
 # NOTE: Replace this with the actual path to your CAD file (e.g., .step, .x_t, .iges)
 ansys_version = 251
-CAD_FILE_PATH = Path("C:/Users/qvu2hx/ucah/parametric_v4.IGS")
+CAD_FILE_PATH = Path(os.path.join(os.getcwd(),"parametric_v4_box.STEP"))
 EXPORT_DESIGN_NAME = "flat bottom geo"
 
 def run_geometry_script():
@@ -40,25 +40,16 @@ def run_geometry_script():
         return # Exit since we cannot mock selection reliably
 
     # 3. Access the Imported Geometry
-    bodies = design.bodies
-    
+    body = design.bodies[0]
 
     # identify name surface regions
-    inlet = [bodies[0]] + bodies[2:6]
-    print(inlet[-1])
-    
-    outlet = [bodies[1]]
-    vehicle_faces = bodies[6:]
-    print(vehicle_faces[0])
-    print(len(bodies))
-    print(type(bodies))
-    if not bodies:
+    inlet = body.faces[0:3] + body.faces[4:6]
+    outlet = [body.faces[3]]
+    vehicle_faces = body.faces[6:]
+
+    if not body:
         print("Error: Imported design contains no solid bodies. Exiting.")
         return
-
-    # We will select the first body in the design
-    side1 = bodies[0]
-    print(f"Found {len(bodies)} bodies. Targeting the first body: {side1.name}")
 
     # 4. Create Named Selection 1: Whole Body Selection
     # Select the entire body for a simulation part
@@ -68,7 +59,7 @@ def run_geometry_script():
     print("Named selections created successfully.")
 
     # 5. Export the Design with Named Selections
-    design.export_to_scdocx(EXPORT_DESIGN_NAME)
+    design.export_to_scdocx()
 
     print("\nScript finished successfully.")
 

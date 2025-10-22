@@ -149,7 +149,7 @@ plotter.show()
 #
 # ```python
 # # Save the design
-file = design.export_to_pmdb()
+file = design.export_to_scdocx()
 # ```
 #
 # You can import the exported PMDB file into Fluent to set up the mesh and perform the simulation.
