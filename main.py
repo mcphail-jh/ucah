@@ -58,26 +58,33 @@ def main():
         # start dialog to choose action
         print("------Welcome to LARP Automation------")
         print("Project folder set to:", project_folder)
-        action = input("\nSelect Action: Upload CAD (1) | Run Cases (2) | Unlock All Cases (3) | Exit (any other key): ")
-        if action == "1":
-            manager.upload_cad()
-        elif action == "2":
-            n = int(input("Enter number of cases to pull: "))
-            while n <= 0:
-                n = int(input("Please enter a valid positive integer for number of cases: "))
+        print('--------------------------------------')
+        while True:
+            action = input("Select Action: Upload CAD (1) | Run Cases (2) | Unlock All Cases (3) | Exit (any other key): ")
+            if action == "1":
+                manager.upload_cad()
+            elif action == "2":
+                n = int(input("Enter number of cases to pull: "))
+                while n <= 0:
+                    n = int(input("Please enter a valid positive integer for number of cases: "))
 
-            # pull_cases returns a list of Case objects
-            queue = manager.pull_cases(n)
-            # TODO: Pass the queue to fluent_auto for processing
-    
-            if len(queue) == 0:
-                print("No available cases to run. Exiting.")
+                # pull_cases returns a list of Case objects
+                queue = manager.pull_cases(n)
+                # TODO: Pass the queue to fluent_auto for processing
+
+
+
+                if len(queue) == 0:
+                    print("No available cases to run. Exiting.")
+                    return
+            elif action == "3":
+                confirm = input("Are you sure? Only do this for debugging and NOT if anyone else is running cases.\n'y' to continue. Any other key to cancel.")
+                if str(confirm) == 'y':
+                    manager.unlock_all()
+
+            else:
+                print("Exiting.")
                 return
-        elif action == "3":
-            manager.unlock_all()
-
-        else:
-            print("Exiting.")
     
     
     except KeyboardInterrupt:

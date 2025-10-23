@@ -14,16 +14,19 @@ from Case import Case
 
 RESULTS_FILE = 'output.json'
 LOCK_FILE = 'lock.txt'
+
 # default name of the folder in the OneDrive where cases are stored
-# change with set_db_name if another name is being used
+# can specify a different remote folder on initialization if desired (e.g. to work locally)
+REMOTE_FOLDER = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\")
 DB_NAME = "TestDatabase"
 
 
 class CaseManager():
 
-    def __init__(self, project_folder):
+    def __init__(self, project_folder, remote_folder=REMOTE_FOLDER, db_name=DB_NAME):
         # project_folder will contain cfd_folder and cad_folder as subfolders
         self.project_folder = project_folder
+        self.remote_folder = remote_folder
         self.cfd_folder = os.path.join(project_folder, 'CFD')
         self.cad_folder = os.path.join(project_folder, 'CAD')
 
@@ -35,22 +38,22 @@ class CaseManager():
         self.remote_cases = []
 
         # name of the OneDrive database folder
-        self.db_name = DB_NAME
+        self.db_name = db_name
         
         # check that OneDrive is signed in and has the proper shortcut
-        if not os.path.isdir(os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\")):
+        if not os.path.isdir(os.path.expanduser()):
             return "Error: Could not find OneDrive database.\nEnsure OneDrive is signed in and you have the UCAH Hypersonic Design Competition Capstone Group - Documents shortcut"
         
-        self.onedrive_folder = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\" + DB_NAME)
+        self.db_folder = os.path.join(remote_folder, db_name)
 
     def _update_remote_cases(self):
         '''
-        Checks OneDrive for the status of each case. Helpful for selecting cases which are not being worked on.
+        Checks OneDrive database at `db_folder` for the status of each case. Helpful for selecting cases which are not being worked on.
         '''
         new_cases = []
-        case_names = os.listdir(self.onedrive_folder)
+        case_names = os.listdir(self.db_folder)
         for case_name in case_names:
-            case_path = os.path.join(self.onedrive_folder, case_name)
+            case_path = os.path.join(self.db_folder, case_name)
             # if the item is in fact a subfolder, open it
             if os.path.isdir(case_path):
                 # create a new Case object
@@ -73,7 +76,7 @@ class CaseManager():
 
     def upload_cad(self):
         '''
-        Uploads all IGES files from local `cad_folder` to separate folders in the team OneDrive 
+        Uploads all IGES files from local `cad_folder` to separate folders in the team OneDrive `db_folder`
         '''
         if not os.path.isdir(self.project_folder):
             print("Error: Invalid/Missing Project Folder: ", self.project_folder)
@@ -83,7 +86,7 @@ class CaseManager():
 
         for file in igs_files:
             # make a new folder with the file's name (minus the .igs suffix)
-            destination_directory = os.path.join(self.onedrive_folder, file[:-4])
+            destination_directory = os.path.join(self.db_folder, file[:-4])
 
             # Ensure the destination directory exists (optional, but good practice)
             os.makedirs(destination_directory, exist_ok=True)
@@ -132,7 +135,7 @@ class CaseManager():
                     case.lock()
 
                 # download the files
-                local_path = self._download(case.name)
+                local_path = self._download_case(case.name)
                 # assign local path to the case object and add to the queue
                 case.set_local_path(local_path)
                 queue.append(case)
@@ -161,7 +164,7 @@ class CaseManager():
             case.unlock()
 
 
-    def _download(self, folder_name):
+    def _download_case(self, folder_name):
         '''
         Helper function to download the contents of one folder from the OneDrive database into `self.cfd_folder`
         Returns the full path of the local folder
@@ -172,7 +175,7 @@ class CaseManager():
         os.makedirs(local_path, exist_ok=True)
 
         # get full path to the remote file
-        remote_path = os.path.join(self.onedrive_folder, folder_name)
+        remote_path = os.path.join(self.db_folder, folder_name)
 
         # Copy all the files
         for f in os.listdir(remote_path):
@@ -192,7 +195,7 @@ class CaseManager():
 
     def set_db_name(self, db_name):
         self.db_name = db_name
-        self.onedrive_folder = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\" + self.db_name)
+        self.db_folder = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\" + self.db_name)
 
 
 if __name__ == '__main__':
