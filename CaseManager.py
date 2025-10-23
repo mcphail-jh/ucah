@@ -41,8 +41,8 @@ class CaseManager():
         self.db_name = db_name
         
         # check that OneDrive is signed in and has the proper shortcut
-        if not os.path.isdir(os.path.expanduser()):
-            return "Error: Could not find OneDrive database.\nEnsure OneDrive is signed in and you have the UCAH Hypersonic Design Competition Capstone Group - Documents shortcut"
+        if not os.path.isdir(remote_folder):
+            return "Error: Could not find remote folder.\nEnsure OneDrive is signed in and you have the UCAH Hypersonic Design Competition Capstone Group - Documents shortcut"
         
         self.db_folder = os.path.join(remote_folder, db_name)
 

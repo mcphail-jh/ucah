@@ -55,6 +55,7 @@ def main():
             return
         
         manager = CaseManager(project_folder)
+        queue = None
         # start dialog to choose action
         print("------Welcome to LARP Automation------")
         print("Project folder set to:", project_folder)
