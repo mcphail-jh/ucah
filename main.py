@@ -12,6 +12,9 @@ Running Cases
 import argparse
 import os
 import sys
+from fluentfile_auto import CFD_job
+
+SETUP_FILE = "placeholder/until/we/make/a/setup/file/in/this/repo.h5"
 
 def _parse_args():
     parser = argparse.ArgumentParser(description='Automation program CLI')
@@ -71,13 +74,33 @@ def main():
 
                 # pull_cases returns a list of Case objects
                 queue = manager.pull_cases(n)
-                # TODO: Pass the queue to fluent_auto for processing
-
-
 
                 if len(queue) == 0:
                     print("No available cases to run. Exiting.")
                     return
+                
+                # TODO: Pass the queue to fluent_auto for processing
+                # run each case and move on to the next one if it failed
+                for i, case in enumerate(queue):
+                    print(f"Running case {case.name} ({i}/{len(queue)})")
+                    
+                    try:
+                        # TODO: Specify nprocs from command line
+                        cfd_job = CFD_job(case.local_path, nprocs=22)
+                        # FOR RIGHT NOW, ASSUMING NO MESH FILE EXISTS AND ALL RUNS ARE FROM CAD
+                        cad_path = [f for f in os.listdir(case.local_path) if f.endswith('.igs')][0]
+                        # mesh and run case
+                        cfd_job.run_fluent(SETUP_FILE, cad_file=cad_path, iter=10)
+                        # TODO: Extract important data into json/csv
+                        # upload the results to the remote folder
+                        manager._upload_case(case)
+                    
+                    except Exception as e:
+                        print(f"An error occured! {case.name}: {e}")
+                    finally:
+                        case.unlock()
+                    
+
             elif action == "3":
                 confirm = input("Are you sure? Only do this for debugging and NOT if anyone else is running cases.\n'y' to continue. Any other key to cancel.")
                 if str(confirm) == 'y':

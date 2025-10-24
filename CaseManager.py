@@ -190,6 +190,30 @@ class CaseManager():
                 print(f"An error occurred: {e}")
         return local_path
     
+    def _upload_case(self, case : Case):
+        '''
+        Helper function to upload the contents from the case's local folder to the remote folder
+        '''
+        # get full path to the new folder
+        remote_path = case.remote_path
+        # make the new folder if it doesn't exist
+        os.makedirs(remote_path, exist_ok=True)
+
+        # get full path to the local file
+        local_path = case.local_path
+
+        # Copy all the files
+        for f in os.listdir(local_path):
+            source = os.path.join(local_path, f)
+            destination = os.path.join(remote_path, f)
+            try:
+                shutil.copy(source, destination)
+                #print(f"File '{f}' copied successfully to '{remote_path}'")
+            except FileNotFoundError:
+                print(f"Error: Source file '{f}' not found.")
+            except Exception as e:
+                print(f"An error occurred: {e}")
+    
 
     # ------------ setter functions ------------
 
