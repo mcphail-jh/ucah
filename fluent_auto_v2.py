@@ -1,0 +1,26 @@
+import os
+if not os.getenv('FLUENT_PROD_DIR'):
+    import ansys.fluent.core as pyfluent
+    flglobals = pyfluent.setup_for_fluent(product_version="25.1.0", mode="meshing", dimension=3, precision="double", processor_count=8, ui_mode="gui", graphics_driver="dx11")
+    globals().update(flglobals)
+
+workflow.TaskObject['Import Geometry'].Arguments.set_state({r'FileName': r'C:/Users/Soren Poole/OneDrive - University of Virginia/Capstone/ucah/parametric_v4_box.pmdb',r'ImportCadPreferences': {r'MaxFacetLength': 0,},r'LengthUnit': r'm',})
+workflow.TaskObject['Import Geometry'].Execute()
+workflow.TaskObject['Add Local Sizing'].Arguments.set_state({r'AddChild': r'yes',r'BOICellsPerGap': 1,r'BOIControlName': r'vehicle_size',r'BOICurvatureNormalAngle': 18,r'BOIExecution': r'Face Size',r'BOIFaceLabelList': [r'vehicle'],r'BOIGrowthRate': 1.15,r'BOISize': 0.005,r'BOIZoneorLabel': r'label',})
+workflow.TaskObject['Add Local Sizing'].AddChildAndUpdate(DeferUpdate=False)
+workflow.TaskObject['Generate the Surface Mesh'].Arguments.set_state({r'CFDSurfaceMeshControls': {r'CellsPerGap': 2,r'CurvatureNormalAngle': 19,r'MaxSize': 0.3,r'MinSize': 0.002,},})
+workflow.TaskObject['Generate the Surface Mesh'].Execute()
+workflow.TaskObject['Describe Geometry'].UpdateChildTasks(Arguments={r'v1': True,}, SetupTypeChanged=False)
+workflow.TaskObject['Describe Geometry'].Arguments.set_state({r'NonConformal': r'No',r'SetupType': r'The geometry consists of only fluid regions with no voids',})
+workflow.TaskObject['Describe Geometry'].UpdateChildTasks(Arguments={r'v1': True,}, SetupTypeChanged=True)
+workflow.TaskObject['Describe Geometry'].Execute()
+workflow.TaskObject['Update Boundaries'].Arguments.set_state({r'BoundaryLabelList': [r'inlet'],r'BoundaryLabelTypeList': [r'pressure-far-field'],r'OldBoundaryLabelList': [r'inlet'],r'OldBoundaryLabelTypeList': [r'velocity-inlet'],})
+workflow.TaskObject['Update Boundaries'].Execute()
+workflow.TaskObject['Describe Geometry'].UpdateChildTasks(Arguments={r'v1': True,}, SetupTypeChanged=False)
+workflow.TaskObject['Update Regions'].Arguments.set_state({r'OldRegionNameList': [r'fluid'],r'OldRegionTypeList': [r'fluid'],r'RegionNameList': [r'fluid'],r'RegionTypeList': [r'dead'],})
+workflow.TaskObject['Update Regions'].Execute()
+workflow.TaskObject['Add Boundary Layers'].Arguments.set_state({r'BLControlName': r'last-ratio_1',r'BlLabelList': [r'vehicle'],r'FaceScope': {r'GrowOn': r'selected-labels',},r'FirstHeight': 2e-05,r'LocalPrismPreferences': {r'Continuous': r'Continuous',},r'NumberOfLayers': 20,r'OffsetMethodType': r'last-ratio',r'TransitionRatio': 0.2,})
+workflow.TaskObject['Add Boundary Layers'].AddChildAndUpdate(DeferUpdate=False)
+workflow.TaskObject['Generate the Volume Mesh'].Arguments.set_state({r'PrismPreferences': {r'ShowPrismPreferences': False,},r'VolumeFill': r'polyhedra',r'VolumeFillControls': {r'GrowthRate': 1.15,},r'VolumeMeshPreferences': {r'ShowVolumeMeshPreferences': True,},})
+workflow.TaskObject['Generate the Volume Mesh'].Arguments.set_state({r'PrismPreferences': {r'ShowPrismPreferences': False,},r'VolumeFill': r'polyhedra',r'VolumeFillControls': {r'GrowthRate': 1.15,r'TetPolyMaxCellLength': 0.5,},r'VolumeMeshPreferences': {r'ShowVolumeMeshPreferences': False,},})
+workflow.TaskObject['Generate the Volume Mesh'].Execute()
