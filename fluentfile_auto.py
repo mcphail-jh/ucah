@@ -39,9 +39,17 @@ class CFD_job:
         body = design.bodies[0]
 
         # identify name surface regions
-        inlet = body.faces[0:3] + body.faces[4:6]
-        outlet = [body.faces[3]]
+        box_faces = body.faces[0:6]
+        inlet = []
+        outlet = []
         vehicle_faces = body.faces[6:]
+
+        for face in box_faces:
+            if face.normal().z == -1:
+                outlet.append(face)
+            else:
+                inlet.append(face)
+
 
         if not body:
             print("Error: Imported design contains no solid bodies. Exiting.")
@@ -57,8 +65,6 @@ class CFD_job:
         geo_file = design.export_to_pmdb()
         self.geo_file = geo_file
         time.sleep(10)
-
-        print("\nScript finished successfully.")
 
 
     def run_fluent(self):
@@ -111,5 +117,6 @@ if __name__ == "__main__":
     path = os.path.join(os.getcwd(),"parametric_v4_box.STEP")
     case = CFD_job(cad_path=path,ansys_version=251)
     case.run_geometry()
-    case.run_fluent()
+    #case.run_fluent()
+    print("\nCase finished successfully.")
 
