@@ -64,8 +64,8 @@ class CFD_job:
     def run_fluent(self):
         # Define file paths
         
-        geometry_file = self.geo_file
-        geometry_file = geometry_file.replace(r"\\","/")
+        geometry_file = self.geo_file.as_posix()
+        
         # Launch Fluent in meshing mode
         mesher = pyfluent.launch_fluent(mode="meshing",ui_mode=pyfluent.UIMode.GUI, processor_count=8)
         print(geometry_file)
