@@ -7,7 +7,7 @@ from ansys.geometry.core.connection import launcher as launch
 import ansys.fluent.core as pyfluent
 
 class CFD_job:
-    def __init__(self, project_folder, ansys_version=251 ,nprocs=8):
+    def __init__(self, project_folder, ansys_version=251, nprocs=8):
         
         self.project_folder = project_folder
         self.ansys_version = ansys_version
@@ -18,71 +18,84 @@ class CFD_job:
         '''
         Creates the named selections for a CAD file and returns/saves a mesh object to `self.project_folder`
         '''
-        ansys_version = self.ansys_version
+
         CAD_FILE_PATH = Path(cad_path)
-        # create pmdb path by replacing the cad file's extension with pmdb
-        cad_path_no_ext = cad_path.split('.')[0]
-        pmdb_path = Path(cad_path_no_ext + ".pmdb")
 
         # 1. Initialize the Geometry Service (Connects to SpaceClaim/Discovery backend)
         # launch geometry
         print("Launching Geometry Service...")
-        model = launch.launch_modeler_with_spaceclaim(product_version=ansys_version)
-        print("Geometry Service launched successfully.")
+        model = launch.launch_modeler_with_spaceclaim()
 
-        # 2. Import the CAD File
-        print(f"Importing CAD file: {CAD_FILE_PATH.name}...")
+        try:
+            print("Geometry Service launched successfully.")
+
+            # 2. Import the CAD File
+            print(f"Importing CAD file: {CAD_FILE_PATH.name}...")
+            
+            # This function returns the active Design object containing all geometry.
+            # Using a dummy file path if the real one isn't found to let the script proceed
+            # in a non-execution environment, but will warn the user.
+            if CAD_FILE_PATH.exists():
+                design = model.open_file(file_path=CAD_FILE_PATH)
+                print("CAD file imported successfully.")
+            else:
+                raise FileNotFoundError(f"Could not import CAD file at {CAD_FILE_PATH}. Check your path and try again.")
+
+            # 3. Access the Imported Geometry
+            body = design.bodies[0]
+
+            # identify name surface regions
+            box_faces = body.faces[0:6]
+            inlet = []
+            outlet = []
+            vehicle_faces = body.faces[6:]
+
+            for face in box_faces:
+                if face.normal().z == -1:
+                    outlet.append(face)
+                else:
+                    inlet.append(face)
+
+            if not body:
+                raise Exception("Error: Imported design contains no solid bodies.")
+
+            # 4. Create Named Selection 1: Whole Body Selection
+            # Select the entire body for a simulation part
+            design.create_named_selection("inlet",faces=inlet)
+            design.create_named_selection("outlet",faces=outlet)
+            design.create_named_selection("vehicle",faces=vehicle_faces)
+            print("Named selections created successfully.")
+
+            # 5. Export the Design with Named Selections
+            geo_file = design.export_to_pmdb(self.project_folder)
         
-        # This function returns the active Design object containing all geometry.
-        # Using a dummy file path if the real one isn't found to let the script proceed
-        # in a non-execution environment, but will warn the user.
-        if CAD_FILE_PATH.exists():
-            design = model.open_file(file_path=CAD_FILE_PATH)
-            print("CAD file imported successfully.")
-        else:
-            raise FileNotFoundError(f"Could not import CAD file at {CAD_FILE_PATH}. Check your path and try again.")
-
-        # 3. Access the Imported Geometry
-        body = design.bodies[0]
-
-        # identify name surface regions
-        inlet = body.faces[0:3] + body.faces[4:6]
-        outlet = [body.faces[3]]
-        vehicle_faces = body.faces[6:]
-
-        if not body:
-            raise Exception("Error: Imported design contains no solid bodies.")
-
-        # 4. Create Named Selection 1: Whole Body Selection
-        # Select the entire body for a simulation part
-        design.create_named_selection("inlet",faces=inlet)
-        design.create_named_selection("outlet",faces=outlet)
-        design.create_named_selection("vehicle",faces=vehicle_faces)
-        print("Named selections created successfully.")
-
-        # 5. Export the Design with Named Selections
-        geo_file = design.export_to_pmdb(pmdb_path)
+        finally:
+            # regardless of if an error occurs or not, close SpaceClaim
+            model.close()
         
         # Launch Fluent in meshing mode
+        print("Launching Fluent Meshing...")
         mesher = pyfluent.launch_fluent(mode="meshing", 
                                         processor_count=self.nprocs,
                                         dimension=pyfluent.Dimension.THREE,
                                         precision=pyfluent.Precision.DOUBLE)
         
         # run the mesh journal to do the actual meshing on the named selection geometry
+        print("Meshing...")
         self._mesh_journal(mesher, geo_file)
 
         # save the msh file and return the meshing session
-        mesher.file.write_mesh(self.project_folder + '\\mesh.msh.h5') 
+        mesher.file.write_mesh(self.project_folder + '\\mesh.msh.h5')
+        print("Mesh saved to mesh.msh.h5")
         return mesher
-    
     
     def _mesh_journal(self, mesher, geo_file_path):
         '''
         Runs the steps to mesh the geometry with the named selections file saved at `geo_file_path`
         '''
         mesher.workflow.InitializeWorkflow(WorkflowType=r'Watertight Geometry')
-        mesher.workflow.TaskObject['Import Geometry'].Arguments.set_state({r'FileName': geo_file_path,r'ImportCadPreferences': {r'MaxFacetLength': 0,},r'LengthUnit': r'm',})
+        # NOTE: Changed lengh unit to 'mm' since the parametric CAD is in MMGS
+        mesher.workflow.TaskObject['Import Geometry'].Arguments.set_state({r'File Name': geo_file_path,r'ImportCadPreferences': {r'MaxFacetLength': 0,},r'LengthUnit': r'mm',})
         mesher.workflow.TaskObject['Import Geometry'].Execute()
         mesher.workflow.TaskObject['Add Local Sizing'].Arguments.set_state({r'AddChild': r'yes',r'BOICellsPerGap': 1,r'BOIControlName': r'vehicle_size',r'BOICurvatureNormalAngle': 18,r'BOIExecution': r'Face Size',r'BOIFaceLabelList': [r'vehicle'],r'BOIGrowthRate': 1.15,r'BOISize': 0.0025,r'BOIZoneorLabel': r'label',})
         mesher.workflow.TaskObject['Add Local Sizing'].AddChildAndUpdate(DeferUpdate=False)
@@ -106,7 +119,7 @@ class CFD_job:
 
     def run_fluent(self, setup_file, mesh_file=None, cad_file=None, iter=1000):
         '''
-        Run the case. Takes either a mesh file or CAD file (then calls mesh_geometry to mesh it)
+        Run the case. Takes either a mesh file or CAD file (first calls mesh_geometry to mesh it)
         '''
         # if the path to a mesh file is given, start a fluent solver and load in the mesh
         if mesh_file is not None:

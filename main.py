@@ -15,6 +15,7 @@ import sys
 from fluentfile_auto import CFD_job
 
 SETUP_FILE = "placeholder/until/we/make/a/setup/file/in/this/repo.h5"
+CAD_EXT = '.step'
 
 def _parse_args():
     parser = argparse.ArgumentParser(description='Automation program CLI')
@@ -82,13 +83,14 @@ def main():
                 # TODO: Pass the queue to fluent_auto for processing
                 # run each case and move on to the next one if it failed
                 for i, case in enumerate(queue):
-                    print(f"Running case {case.name} ({i}/{len(queue)})")
+                    print(f"Running case {case.name} ({i+1}/{len(queue)})")
                     
                     try:
                         # TODO: Specify nprocs from command line
                         cfd_job = CFD_job(case.local_path, nprocs=22)
                         # FOR RIGHT NOW, ASSUMING NO MESH FILE EXISTS AND ALL RUNS ARE FROM CAD
-                        cad_path = [f for f in os.listdir(case.local_path) if f.endswith('.igs')][0]
+                        cad_path = [f for f in os.listdir(case.local_path) if f.endswith(CAD_EXT)][0]
+                        cad_path = os.path.join(case.local_path, cad_path)
                         # mesh and run case
                         cfd_job.run_fluent(SETUP_FILE, cad_file=cad_path, iter=10)
                         # TODO: Extract important data into json/csv

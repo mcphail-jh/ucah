@@ -1,8 +1,8 @@
 """
-This is a class to sync generated CFD cases (IGS files) with the OneDrive cloud storage
+This is a class to sync local files (generated IGS files, local CFD runs) with a remote folder (the OneDrive cloud storage)
 Given a path to a folder of IGS files and corresponding json config files, it will create/update corresponding folders in the team OneDrive folder
 
-REQUIRED: You must be logged into OneDrive and have the UCAH folder added as a shortcut. It's name should be: 
+REQUIRED: To access the OneDrive foler, you must be logged into OneDrive and have the UCAH folder added as a shortcut. It's name should be: 
 UCAH Hypersonic Design Competition Capstone Group - Documents
 
 """
@@ -14,6 +14,7 @@ from Case import Case
 
 RESULTS_FILE = 'output.json'
 LOCK_FILE = 'lock.txt'
+CAD_EXT = '.step'
 
 # default name of the folder in the OneDrive where cases are stored
 # can specify a different remote folder on initialization if desired (e.g. to work locally)
@@ -78,15 +79,17 @@ class CaseManager():
         '''
         Uploads all IGES files from local `cad_folder` to separate folders in the team OneDrive `db_folder`
         '''
+        print("Uploading CAD files to ", self.db_name)
         if not os.path.isdir(self.project_folder):
             print("Error: Invalid/Missing Project Folder: ", self.project_folder)
             return
         
-        igs_files = [f for f in os.listdir(self.cad_folder) if f.endswith('.igs') or f.endswith('.json')]
+        igs_files = [f for f in os.listdir(self.cad_folder) if f.endswith(CAD_EXT) or f.endswith('.json')]
 
         for file in igs_files:
-            # make a new folder with the file's name (minus the .igs suffix)
-            destination_directory = os.path.join(self.db_folder, file[:-4])
+            # make a new folder with the file's name (minus the extension)
+            folder_name = file.split('.')[0]
+            destination_directory = os.path.join(self.db_folder, folder_name)
 
             # Ensure the destination directory exists (optional, but good practice)
             os.makedirs(destination_directory, exist_ok=True)
@@ -102,6 +105,8 @@ class CaseManager():
                 print(f"Error: Source file '{source_file}' not found.")
             except Exception as e:
                 print(f"An error occurred: {e}")
+        print(f"Uploaded {len(igs_files)//2} CAD file cases")
+            
 
     
     def pull_cases(self, n_cases : int, lock=True):
