@@ -7,16 +7,16 @@ from ansys.geometry.core.connection import launcher as launch
 import ansys.fluent.core as pyfluent
 
 class CFD_job:
-    def __init__(self, project_folder, ansys_version=251, nprocs=8):
+    def __init__(self, case_folder, ansys_version=251, nprocs=8):
         
-        self.project_folder = project_folder
+        self.case_folder = case_folder
         self.ansys_version = ansys_version
         # number of processors to use
         self.nprocs = nprocs
 
     def _mesh_geometry(self, cad_path : str):
         '''
-        Creates the named selections for a CAD file and returns/saves a mesh object to `self.project_folder`
+        Creates the named selections for a CAD file and returns/saves a mesh object to `self.case_folder`
         '''
 
         CAD_FILE_PATH = Path(cad_path)
@@ -45,16 +45,19 @@ class CFD_job:
             body = design.bodies[0]
 
             # identify name surface regions
-            box_faces = body.faces[0:6]
+            
             inlet = []
             outlet = []
-            vehicle_faces = body.faces[6:]
-
-            for face in box_faces:
-                if face.normal().z == -1:
-                    outlet.append(face)
+            vehicle_faces = []
+            for face in body.faces:
+                # bounding box is 5 x 5 x 2.5m, so those should be the only faces with area greater than 12m^2
+                if face.area.magnitude > 12.0:
+                    if (face.normal().z == -1):
+                        outlet.append(face)
+                    else:
+                        inlet.append(face)
                 else:
-                    inlet.append(face)
+                    vehicle_faces.append(face)
 
             if not body:
                 raise Exception("Error: Imported design contains no solid bodies.")
@@ -67,7 +70,7 @@ class CFD_job:
             print("Named selections created successfully.")
 
             # 5. Export the Design with Named Selections
-            geo_file = design.export_to_pmdb(self.project_folder)
+            geo_file = design.export_to_pmdb(self.case_folder)
         
         finally:
             # regardless of if an error occurs or not, close SpaceClaim
@@ -75,17 +78,20 @@ class CFD_job:
         
         # Launch Fluent in meshing mode
         print("Launching Fluent Meshing...")
-        mesher = pyfluent.launch_fluent(mode="meshing", 
+        # IMPORTANT to ensure fluent log and mesh files save in the case folder
+        os.chdir(self.case_folder)
+        mesher = pyfluent.launch_fluent(ui_mode="gui",
+                                        mode="meshing", 
                                         processor_count=self.nprocs,
                                         dimension=pyfluent.Dimension.THREE,
                                         precision=pyfluent.Precision.DOUBLE)
         
         # run the mesh journal to do the actual meshing on the named selection geometry
         print("Meshing...")
-        self._mesh_journal(mesher, geo_file)
+        self._mesh_journal(mesher, geo_file._str)
 
         # save the msh file and return the meshing session
-        mesher.file.write_mesh(self.project_folder + '\\mesh.msh.h5')
+        mesher.file.write_mesh(self.case_folder + '\\mesh.msh.h5')
         print("Mesh saved to mesh.msh.h5")
         return mesher
     
@@ -93,12 +99,16 @@ class CFD_job:
         '''
         Runs the steps to mesh the geometry with the named selections file saved at `geo_file_path`
         '''
-        mesher.workflow.InitializeWorkflow(WorkflowType=r'Watertight Geometry')
-        # NOTE: Changed lengh unit to 'mm' since the parametric CAD is in MMGS
-        mesher.workflow.TaskObject['Import Geometry'].Arguments.set_state({r'File Name': geo_file_path,r'ImportCadPreferences': {r'MaxFacetLength': 0,},r'LengthUnit': r'mm',})
+        workflow = mesher.workflow
+        workflow.InitializeWorkflow(WorkflowType=r'Watertight Geometry')
+        tasks = workflow.TaskObject
+        import_geometry = tasks['Import Geometry']
+        import_geometry.Arguments.set_state({r'FileName': geo_file_path, r'ImportCadPreferences': {r'MaxFacetLength': 0,}, r'LengthUnit': r'm'})
         mesher.workflow.TaskObject['Import Geometry'].Execute()
-        mesher.workflow.TaskObject['Add Local Sizing'].Arguments.set_state({r'AddChild': r'yes',r'BOICellsPerGap': 1,r'BOIControlName': r'vehicle_size',r'BOICurvatureNormalAngle': 18,r'BOIExecution': r'Face Size',r'BOIFaceLabelList': [r'vehicle'],r'BOIGrowthRate': 1.15,r'BOISize': 0.0025,r'BOIZoneorLabel': r'label',})
+
+        mesher.workflow.TaskObject['Add Local Sizing'].Arguments.set_state({r'AddChild': r'yes',r'BOICellsPerGap': 1,r'BOIControlName': r'vehicle_size',r'BOICurvatureNormalAngle': 18,r'BOIExecution': r'Face Size',r'BOIFaceLabelList': [r'vehicle'],r'BOIGrowthRate': 1.15,r'BOISize': 0.025,r'BOIZoneorLabel': r'label',})
         mesher.workflow.TaskObject['Add Local Sizing'].AddChildAndUpdate(DeferUpdate=False)
+        mesher.workflow.TaskObject['Add Local Sizing'].Execute()
         mesher.workflow.TaskObject['Generate the Surface Mesh'].Arguments.set_state({r'CFDSurfaceMeshControls': {r'CellsPerGap': 1,r'CurvatureNormalAngle': 14,r'MaxSize': 0.3,r'MinSize': 0.002,},})
         mesher.workflow.TaskObject['Generate the Surface Mesh'].Execute()
         mesher.workflow.TaskObject['Describe Geometry'].UpdateChildTasks(Arguments={r'v1': True,}, SetupTypeChanged=False)
@@ -108,6 +118,7 @@ class CFD_job:
         mesher.workflow.TaskObject['Update Boundaries'].Arguments.set_state({r'BoundaryLabelList': [r'inlet'],r'BoundaryLabelTypeList': [r'pressure-far-field'],r'OldBoundaryLabelList': [r'inlet'],r'OldBoundaryLabelTypeList': [r'velocity-inlet'],})
         mesher.workflow.TaskObject['Update Boundaries'].Execute()
         mesher.workflow.TaskObject['Describe Geometry'].UpdateChildTasks(Arguments={r'v1': True,}, SetupTypeChanged=False)
+        # line below throwing error "invalid argument [1] improper list" as of 10/24
         mesher.workflow.TaskObject['Update Regions'].Arguments.set_state({r'OldRegionNameList': [r'fluid'],r'OldRegionTypeList': [r'fluid'],r'RegionNameList': [r'fluid'],r'RegionTypeList': [r'dead'],})
         mesher.workflow.TaskObject['Update Regions'].Execute()
         mesher.workflow.TaskObject['Add Boundary Layers'].Arguments.set_state({r'BLControlName': r'last-ratio_1',r'BlLabelList': [r'vehicle'],r'FaceScope': {r'GrowOn': r'selected-labels',},r'FirstHeight': 2e-05,r'LocalPrismPreferences': {r'Continuous': r'Continuous',},r'NumberOfLayers': 20,r'OffsetMethodType': r'last-ratio',r'TransitionRatio': 0.2,})
