@@ -52,7 +52,8 @@ class CFD_job:
             for face in body.faces:
                 # bounding box is 5 x 5 x 2.5m, so those should be the only faces with area greater than 12m^2
                 if face.area.magnitude > 12.0:
-                    if (face.normal().z == -1):
+                    # assumes nose of missile is facing negative x
+                    if (face.normal().x == 1):
                         outlet.append(face)
                     else:
                         inlet.append(face)
@@ -90,9 +91,8 @@ class CFD_job:
         print("Meshing...")
         self._mesh_journal(mesher, geo_file._str)
 
-        # save the msh file and return the meshing session
-        mesher.file.write_mesh(self.case_folder + '\\mesh.msh.h5')
-        print("Mesh saved to mesh.msh.h5")
+        # VOLUME MESH IS NOW SAVED TO TaskObject11.msh.h5 in a subfolder
+
         return mesher
     
     def _mesh_journal(self, mesher, geo_file_path):
@@ -106,7 +106,7 @@ class CFD_job:
         import_geometry.Arguments.set_state({r'FileName': geo_file_path, r'ImportCadPreferences': {r'MaxFacetLength': 0,}, r'LengthUnit': r'm'})
         mesher.workflow.TaskObject['Import Geometry'].Execute()
 
-        mesher.workflow.TaskObject['Add Local Sizing'].Arguments.set_state({r'AddChild': r'yes',r'BOICellsPerGap': 1,r'BOIControlName': r'vehicle_size',r'BOICurvatureNormalAngle': 18,r'BOIExecution': r'Face Size',r'BOIFaceLabelList': [r'vehicle'],r'BOIGrowthRate': 1.15,r'BOISize': 0.025,r'BOIZoneorLabel': r'label',})
+        mesher.workflow.TaskObject['Add Local Sizing'].Arguments.set_state({r'AddChild': r'yes',r'BOICellsPerGap': 1,r'BOIControlName': r'vehicle_size',r'BOICurvatureNormalAngle': 18,r'BOIExecution': r'Face Size',r'BOIFaceLabelList': [r'vehicle'],r'BOIGrowthRate': 1.15,r'BOISize': 0.0025,r'BOIZoneorLabel': r'label',})
         mesher.workflow.TaskObject['Add Local Sizing'].AddChildAndUpdate(DeferUpdate=False)
         mesher.workflow.TaskObject['Add Local Sizing'].Execute()
         mesher.workflow.TaskObject['Generate the Surface Mesh'].Arguments.set_state({r'CFDSurfaceMeshControls': {r'CellsPerGap': 1,r'CurvatureNormalAngle': 14,r'MaxSize': 0.3,r'MinSize': 0.002,},})
@@ -119,7 +119,7 @@ class CFD_job:
         mesher.workflow.TaskObject['Update Boundaries'].Execute()
         mesher.workflow.TaskObject['Describe Geometry'].UpdateChildTasks(Arguments={r'v1': True,}, SetupTypeChanged=False)
         # line below throwing error "invalid argument [1] improper list" as of 10/24
-        mesher.workflow.TaskObject['Update Regions'].Arguments.set_state({r'OldRegionNameList': [r'fluid'],r'OldRegionTypeList': [r'fluid'],r'RegionNameList': [r'fluid'],r'RegionTypeList': [r'dead'],})
+        #mesher.workflow.TaskObject['Update Regions'].Arguments.set_state({r'OldRegionNameList': [r'fluid'],r'OldRegionTypeList': [r'fluid'],r'RegionNameList': [r'fluid'],r'RegionTypeList': [r'dead'],})
         mesher.workflow.TaskObject['Update Regions'].Execute()
         mesher.workflow.TaskObject['Add Boundary Layers'].Arguments.set_state({r'BLControlName': r'last-ratio_1',r'BlLabelList': [r'vehicle'],r'FaceScope': {r'GrowOn': r'selected-labels',},r'FirstHeight': 2e-05,r'LocalPrismPreferences': {r'Continuous': r'Continuous',},r'NumberOfLayers': 20,r'OffsetMethodType': r'last-ratio',r'TransitionRatio': 0.2,})
         mesher.workflow.TaskObject['Add Boundary Layers'].AddChildAndUpdate(DeferUpdate=False)
@@ -153,12 +153,12 @@ class CFD_job:
         solver.file.read_case(file_name=setup_file, read_data=False, read_mesh=False)
 
         # Initialize and run
+        # NOTE: CURRENTLY TAKES THE NUMBER OF ITERATIONS SPECIFIED IN THE SETUP FILE, so these lines seem to be ineffective
         solver.solution.initialization.hybrid_initialize()
         solver.solution.run_calculation.iterate(number_of_iterations=iter)
 
         # TODO: figure out format for results file
         # Save the final result
-        solver.solution.case.write_case_and_data(file_name="solution.cas", binary=True, overwrite=True)
 
         # TODO: Extract relevant data and export to json or csv, then return status to main.py
         solver.exit()

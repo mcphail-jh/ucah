@@ -14,7 +14,7 @@ import os
 import sys
 from fluentfile_auto import CFD_job
 
-SETUP_FILE = "placeholder/until/we/make/a/setup/file/in/this/repo.h5"
+SETUP_FILE = "FFF-Setup-Output.cas.h5"
 CAD_EXT = '.step'
 
 def _parse_args():
@@ -92,7 +92,8 @@ def main():
                         cad_path = [f for f in os.listdir(case.local_path) if f.endswith(CAD_EXT)][0]
                         cad_path = os.path.join(case.local_path, cad_path)
                         # mesh and run case
-                        cfd_job.run_fluent(SETUP_FILE, cad_file=cad_path, iter=10)
+                        setup_file_path = os.path.join(manager.project_folder, SETUP_FILE)
+                        cfd_job.run_fluent(setup_file_path, cad_file=cad_path, iter=10)
                         # TODO: Extract important data into json/csv
                         # upload the results to the remote folder
                         manager._upload_case(case)
