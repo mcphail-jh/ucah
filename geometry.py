@@ -4,14 +4,12 @@ import time
 
 # Import the core components from the PyAnsys Geometry library
 from ansys.geometry.core.connection import launcher as launch
-from ansys.geometry.core.misc import UNITS
-from ansys.geometry.core.math import Plane
+from ansys.geometry.core.misc import UNITS, DEFAULT_UNITS
 
 # --- Configuration ---
 # NOTE: Replace this with the actual path to your CAD file (e.g., .step, .x_t, .iges)
 ansys_version = 251
 CAD_FILE_PATH = Path(os.path.join(os.getcwd(),"parametric_v4_box.STEP"))
-EXPORT_DESIGN_NAME = "flat bottom geo"
 
 def run_geometry_script():
     """
@@ -32,6 +30,7 @@ def run_geometry_script():
     # in a non-execution environment, but will warn the user.
     if CAD_FILE_PATH.exists():
         design = model.open_file(file_path=CAD_FILE_PATH)
+        DEFAULT_UNITS.LENGTH = UNITS.m  # Set default units to meters
         print("CAD file imported successfully.")
     else:
         # Mocking a basic design object for code demonstration purposes
@@ -59,7 +58,7 @@ def run_geometry_script():
     print("Named selections created successfully.")
 
     # 5. Export the Design with Named Selections
-    design.export_to_scdocx()
+    design.export_to_pmdb()
 
     print("\nScript finished successfully.")
 

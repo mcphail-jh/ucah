@@ -33,7 +33,8 @@ class CFD_job:
         else:
             # Mocking a basic design object for code demonstration purposes
             # (In a live environment, this block would not be needed)
-            print("WARNING: Skipping actual file import due to missing file. Using a mock design object.")
+            print("Error: CAD file not found. Exiting.")
+            exit()
 
         # 3. Access the Imported Geometry
         body = design.bodies[0]
@@ -97,8 +98,9 @@ class CFD_job:
         mesher.workflow.TaskObject['Generate the Volume Mesh'].Arguments.set_state({r'PrismPreferences': {r'ShowPrismPreferences': False,},r'VolumeFill': r'polyhedra',r'VolumeFillControls': {r'GrowthRate': 1.15,},r'VolumeMeshPreferences': {r'ShowVolumeMeshPreferences': True,},})
         mesher.workflow.TaskObject['Generate the Volume Mesh'].Arguments.set_state({r'PrismPreferences': {r'ShowPrismPreferences': False,},r'VolumeFill': r'polyhedra',r'VolumeFillControls': {r'GrowthRate': 1.15,r'TetPolyMaxCellLength': 0.5,},r'VolumeMeshPreferences': {r'ShowVolumeMeshPreferences': False,},})
         mesher.workflow.TaskObject['Generate the Volume Mesh'].Execute()
-        input()
-
+        
+        self.mesh_path = mesher.tui.file.export.ansys()
+        
         # Switch the session to the solver context
         solver = mesher.switch_to_solver()
 
@@ -114,9 +116,9 @@ class CFD_job:
         solver.exit()
 
 if __name__ == "__main__":
-    path = os.path.join(os.getcwd(),"parametric_v4_box.STEP")
+    path = os.path.join(os.getcwd(),"Winged_Missile_2024.STEP")
     case = CFD_job(cad_path=path,ansys_version=251)
     case.run_geometry()
-    #case.run_fluent()
+    case.run_fluent()
     print("\nCase finished successfully.")
 

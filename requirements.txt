@@ -4,7 +4,7 @@ ansys-api-geometry==0.4.83
 ansys-api-platform-instancemanagement==1.1.3
 ansys-api-tools-filetransfer==0.1.1
 ansys-fluent-core==0.35.0
-ansys-geometry-core==0.12.0
+ansys-geometry-core==0.3.2
 ansys-platform-instancemanagement==1.1.2
 ansys-tools-filetransfer==0.1.1
 ansys-tools-path==0.7.3

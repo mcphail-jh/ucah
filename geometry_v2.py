@@ -34,7 +34,7 @@ from ansys.geometry.core import launch_modeler
 
 cwd = os.getcwd()
 
-cad_file = "parametric_v5.STEP"
+cad_file = "parametric_v4_box.STEP"
 
 
 Cad_path = os.path.join(cwd, cad_file)
@@ -47,7 +47,8 @@ modeler = launch_modeler()
 design = modeler.open_file(Cad_path)
 # Retrieve the airfoil body
 airfoil = design.bodies[0]
-
+print(airfoil)
+print(airfoil.faces)
 # Display the airfoil
 # %% [markdown]
 # ## Prepare the geometry for the simulation
@@ -108,20 +109,22 @@ fluid = design.extrude_sketch("Fluid", fluid_sketch, BOX_WIDTH)
 # %%
 # Create named selections in the fluid domain (inlet, outlet, and surrounding faces)
 # Add also the airfoil as a named selection
-fluid_faces = fluid.faces
-inlet_faces = []
+#fluid_faces = fluid.faces
+inlet_faces = airfoil.faces[0:6]
 outlet_faces = []
+"""
 for face in fluid_faces:
     if face.normal().z == -1:
         outlet_faces.append(face)
     elif face.normal().x == -1  or face.normal().x == 1 or face.normal().y == 1 or face.normal().y == -1 or face.normal().z == 1:
         inlet_faces.append(face)
+"""
 
 print(len(inlet_faces))
 print(len(outlet_faces))
-design.create_named_selection("Outlet Fluid", faces=outlet_faces)
+#design.create_named_selection("Outlet Fluid", faces=outlet_faces)
 design.create_named_selection("Inlet Fluid", faces=inlet_faces)
-design.create_named_selection("Airfoil Faces", faces=airfoil.faces)
+#design.create_named_selection("Airfoil Faces", faces=airfoil.faces)
 
 # %% [markdown]
 # ## Display the geometry
