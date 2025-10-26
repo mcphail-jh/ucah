@@ -7,13 +7,23 @@ from ansys.geometry.core.connection import launcher as launch
 import ansys.fluent.core as pyfluent
 
 class CFD_job:
-    def __init__(self,cad_path,ansys_version=251):
-        self.cad_path = cad_path
+    def __init__(self,working_dir,ansys_version=251):
+        self.working_dir = working_dir
         self.ansys_version = ansys_version
 
     def run_geometry(self):
         ansys_version = self.ansys_version
-        CAD_FILE_PATH = Path(self.cad_path)
+        working_path = Path(self.working_dir)
+
+        CAD_FILE_PATH = list(working_path.glob("*.STEP"))
+        if len(CAD_FILE_PATH) > 1:
+            print("Multiple CAD files found. Please specify a single CAD file path.")
+            exit()
+        else:
+            CAD_FILE_PATH = CAD_FILE_PATH[0]
+
+        
+
 
         # 1. Initialize the Geometry Service (Connects to SpaceClaim/Discovery backend)
         # launch geometry
@@ -63,19 +73,17 @@ class CFD_job:
         print("Named selections created successfully.")
 
         # 5. Export the Design with Named Selections
-        geo_file = design.export_to_pmdb()
+        geo_file = design.export_to_pmdb(working_path)
         self.geo_file = geo_file
-        time.sleep(10)
 
 
     def run_fluent(self):
         # Define file paths
-        
         geometry_file = self.geo_file.as_posix()
         
         # Launch Fluent in meshing mode
+        print("Launching Fluent Meshing...")
         mesher = pyfluent.launch_fluent(mode="meshing",ui_mode=pyfluent.UIMode.GUI, processor_count=8)
-        print(geometry_file)
         # exsecute meshing workflow
         mesher.workflow.InitializeWorkflow(WorkflowType=r'Watertight Geometry')
         mesher.workflow.TaskObject['Import Geometry'].Arguments.set_state({r'FileName': geometry_file,r'ImportCadPreferences': {r'MaxFacetLength': 0,},r'LengthUnit': r'm',})
@@ -105,6 +113,15 @@ class CFD_job:
         solver = mesher.switch_to_solver()
 
         # Read only the setup from the case file, keeping the mesh you just created
+  
+        setup_file = list(self.working_dir.glob("*.cas.h5"))
+        
+        if len(setup_file) > 1:
+            print("Multiple setup files found. Please specify a single setup file path.")
+            exit()
+        else:
+            setup_file = setup_file[0]
+
         solver.file.read_case(file_name=setup_file, read_data=False, read_mesh=False)
 
         # Initialize and run
@@ -112,12 +129,15 @@ class CFD_job:
         solver.solution.run_calculation.iterate(number_of_iterations=100)
 
         # Save the final result
+        if results_file is None:
+            results_file = working_path / "fluent_results.cas.h5"
+
         solver.file.write_case_data(file_name=results_file)
         solver.exit()
 
 if __name__ == "__main__":
-    path = os.path.join(os.getcwd(),"Winged_Missile_2024.STEP")
-    case = CFD_job(cad_path=path,ansys_version=251)
+    path = os.path.join(os.getcwd(),"first test")
+    case = CFD_job(working_dir=path,ansys_version=251)
     case.run_geometry()
     case.run_fluent()
     print("\nCase finished successfully.")
