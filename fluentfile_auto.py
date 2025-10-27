@@ -1,9 +1,11 @@
 from pathlib import Path
 import os
 import time
+import logging
 
 # Import the core components from the PyAnsys library
-from ansys.geometry.core.connection import launcher as launch
+from ansys.geometry.core import launch_modeler_with_spaceclaim
+from ansys.geometry.core.misc.options import ImportOptions
 import ansys.fluent.core as pyfluent
 
 class CFD_job:
@@ -19,24 +21,24 @@ class CFD_job:
         Creates the named selections for a CAD file and returns/saves a mesh object to `self.case_folder`
         '''
 
-        CAD_FILE_PATH = Path(cad_path)
+        CAD_FILE_PATH = cad_path
 
         # 1. Initialize the Geometry Service (Connects to SpaceClaim/Discovery backend)
         # launch geometry
         print("Launching Geometry Service...")
-        model = launch.launch_modeler_with_spaceclaim()
+        model = launch_modeler_with_spaceclaim(product_version=232)
 
         try:
             print("Geometry Service launched successfully.")
 
             # 2. Import the CAD File
-            print(f"Importing CAD file: {CAD_FILE_PATH.name}...")
+            print(f"Importing CAD file: {CAD_FILE_PATH}...")
             
             # This function returns the active Design object containing all geometry.
             # Using a dummy file path if the real one isn't found to let the script proceed
             # in a non-execution environment, but will warn the user.
-            if CAD_FILE_PATH.exists():
-                design = model.open_file(file_path=CAD_FILE_PATH)
+            if os.path.exists(CAD_FILE_PATH):
+                design = model.open_file(file_path=CAD_FILE_PATH, upload_to_server=False, import_options=ImportOptions())
                 print("CAD file imported successfully.")
             else:
                 raise FileNotFoundError(f"Could not import CAD file at {CAD_FILE_PATH}. Check your path and try again.")
