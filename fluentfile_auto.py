@@ -2,11 +2,13 @@ from pathlib import Path
 import os
 import time
 import logging
+import json
 
 # Import the core components from the PyAnsys library
 from ansys.geometry.core import launch_modeler_with_spaceclaim
 from ansys.geometry.core.misc.options import ImportOptions
 import ansys.fluent.core as pyfluent
+
 
 class CFD_job:
     def __init__(self, case_folder, ansys_version=251, nprocs=8):
@@ -160,32 +162,26 @@ class CFD_job:
         solver.settings.solution.initialization.hybrid_initialize()
         solver.settings.solution.run_calculation.iterate(iter_count=iter)
 
-        # TODO: figure out format for results file
-        # Save the final result
-        '''
-        # 1. Compute the report definition
-        result = solver_session.solution.report_definitions.compute(
-            report_defs=["outlet-temp-avg"]
-        )
-
-        # The result is a list of dictionaries. For a single report, get the value from the first item.
-        last_reported_value = result[0]["outlet-temp-avg"][0]
-
-        # 2. Write the value to a file
-        report_file_name = "last_report_value.txt"
-        with open(report_file_name, "w") as f:
-            f.write(f"The last reported value was: {last_reported_value}")
-
-        print(f"Last reported value saved to {report_file_name}")
-
-        # Optional: Read the file to verify the content
-        with open(report_file_name, "r") as f:
-            content = f.read()
-            print(content)
-        '''
-
-        # TODO: Extract relevant data and export to json or csv, then return status to main.py
         solver.exit()
+
+        # TODO: figure out format for results file
+        # read each rfile.out file and collect the last value to put into a output.json
+        output_json = {}
+        for f in os.listdir(self.case_folder):
+            if f.endswith('rfile.out'):
+                full_path = os.path.join(self.case_folder, f)
+                with open(full_path) as file:
+                    lines = file.readlines()
+                    report_name = lines[1].strip().split()[1]
+                    last_line = lines[-1]
+                    num_iter, last_value = last_line.strip().split()
+                    last_value = float(last_value)
+                    output_json[report_name] = last_value
+        
+        # write json to the case folder
+        json.dump(output_json, os.path.join(self.case_folder, 'output.json'))
+        print("results saved to output.json")
+        
 
 if __name__ == "__main__":
 

@@ -13,14 +13,17 @@ import argparse
 import os
 import sys
 from fluentfile_auto import CFD_job
+import threading
 
 SETUP_FILE = "mostcurrent_FFF.cas.h5"
 CAD_EXT = '.step'
+TIMEOUT_SEC = 10
+logout = False
 
 def _parse_args():
     parser = argparse.ArgumentParser(description='Automation program CLI')
     # If --upload is present without an argument, argparse will set it to '' (const).
-    parser.add_argument('project_folder', nargs='?', const='', help='Path to project folder. Omit to choose via dialog.')
+    parser.add_argument('-l', action='store_true', help='If present, will logout after running')
     return parser.parse_args()
 
 def _choose_folder_via_dialog():
@@ -36,17 +39,28 @@ def _choose_folder_via_dialog():
         print('Error opening folder dialog:', e, file=sys.stderr)
         return ''
 
+'''
+def timeout_logout():
+        print("LOGOUT CODE")
+'''
 
 def main():
-    try:
-        args = _parse_args()
+    queue = None
 
-        project_folder = args.project_folder
-        if project_folder == '' or project_folder is None:
-            project_folder = _choose_folder_via_dialog()
-            if not project_folder:
-                print('No folder selected. Exiting.', file=sys.stderr)
-                return
+    try:
+        '''
+        timer = threading.Timer(TIMEOUT_SEC, timeout_logout)
+        timer.start()
+        '''
+
+        args = _parse_args()
+        global logout
+        logout = args.l
+
+        project_folder = _choose_folder_via_dialog()
+        if not project_folder:
+            print('No folder selected. Exiting.', file=sys.stderr)
+            return
 
         if not os.path.isdir(project_folder):
             print(f'Provided path is not a directory: {project_folder}', file=sys.stderr)
@@ -102,6 +116,7 @@ def main():
                         print(f"An error occured! {case.name}: {e}")
                     finally:
                         case.unlock()
+                # if all cases ran successfully and -l is specified, exit and logout
                     
 
             elif action == "3":
@@ -125,6 +140,9 @@ def main():
             for case in queue:
                 case.unlock()
         print('An unexpected error occurred:', e, file=sys.stderr)
+    finally:
+        if logout:
+            os.system('shutdown /l')
         
 
 
