@@ -28,7 +28,7 @@ class CFD_job:
         # 1. Initialize the Geometry Service (Connects to SpaceClaim/Discovery backend)
         # launch geometry
         print("Launching Geometry Service...")
-        model = launch.launch_modeler_with_spaceclaim(product_version=ansys_version)
+        model = launch.launch_modeler_with_spaceclaim()
         print("Geometry Service launched successfully.")
 
         # 2. Import the CAD File
@@ -107,10 +107,12 @@ class CFD_job:
         mesher.workflow.TaskObject['Generate the Volume Mesh'].Arguments.set_state({r'PrismPreferences': {r'ShowPrismPreferences': False,},r'VolumeFill': r'polyhedra',r'VolumeFillControls': {r'GrowthRate': 1.15,r'TetPolyMaxCellLength': 0.5,},r'VolumeMeshPreferences': {r'ShowVolumeMeshPreferences': False,},})
         mesher.workflow.TaskObject['Generate the Volume Mesh'].Execute()
         
-        self.mesh_path = mesher.tui.file.export.ansys()
+        self.mesh_path = mesher.tui.file.write_mesh()
+        input()
         
         # Switch the session to the solver context
         solver = mesher.switch_to_solver()
+      
 
         # Read only the setup from the case file, keeping the mesh you just created
   
