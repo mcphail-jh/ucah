@@ -26,7 +26,7 @@ class CFD_job:
         # 1. Initialize the Geometry Service (Connects to SpaceClaim/Discovery backend)
         # launch geometry
         print("Launching Geometry Service...")
-        model = launch_modeler_with_spaceclaim(product_version=232)
+        model = launch_modeler_with_spaceclaim()
 
         try:
             print("Geometry Service launched successfully.")
@@ -146,7 +146,7 @@ class CFD_job:
         # otherwise if a cad_file is given, mesh it first then switch to solver mode
         elif cad_file is not None:
             mesher = self._mesh_geometry(cad_file)
-            mesher.tui.file.write_mesh(path=os.path.join(self.case_folder, "mesh.msh.h5"))
+            #mesher.tui.file.write_mesh(path=os.path.join(self.case_folder, "mesh.msh.h5"))
             solver = mesher.switch_to_solver()
         else:
             raise Exception("A mesh file or CAD file must be specified!")
@@ -157,11 +157,32 @@ class CFD_job:
 
         # Initialize and run
         # NOTE: CURRENTLY TAKES THE NUMBER OF ITERATIONS SPECIFIED IN THE SETUP FILE, so these lines seem to be ineffective
-        solver.solution.initialization.hybrid_initialize()
-        solver.solution.run_calculation.iterate(number_of_iterations=iter)
+        solver.settings.solution.initialization.hybrid_initialize()
+        solver.settings.solution.run_calculation.iterate(iter_count=iter)
 
         # TODO: figure out format for results file
         # Save the final result
+        '''
+        # 1. Compute the report definition
+        result = solver_session.solution.report_definitions.compute(
+            report_defs=["outlet-temp-avg"]
+        )
+
+        # The result is a list of dictionaries. For a single report, get the value from the first item.
+        last_reported_value = result[0]["outlet-temp-avg"][0]
+
+        # 2. Write the value to a file
+        report_file_name = "last_report_value.txt"
+        with open(report_file_name, "w") as f:
+            f.write(f"The last reported value was: {last_reported_value}")
+
+        print(f"Last reported value saved to {report_file_name}")
+
+        # Optional: Read the file to verify the content
+        with open(report_file_name, "r") as f:
+            content = f.read()
+            print(content)
+        '''
 
         # TODO: Extract relevant data and export to json or csv, then return status to main.py
         solver.exit()

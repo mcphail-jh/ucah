@@ -14,7 +14,7 @@ import os
 import sys
 from fluentfile_auto import CFD_job
 
-SETUP_FILE = "FFF-Setup-Output.cas.h5"
+SETUP_FILE = "mostcurrent_FFF.cas.h5"
 CAD_EXT = '.step'
 
 def _parse_args():
@@ -87,7 +87,7 @@ def main():
                     
                     try:
                         # TODO: Specify nprocs from command line
-                        cfd_job = CFD_job(case.local_path, nprocs=22)
+                        cfd_job = CFD_job(case.local_path, nprocs=14)
                         # FOR RIGHT NOW, ASSUMING NO MESH FILE EXISTS AND ALL RUNS ARE FROM CAD
                         cad_path = [f for f in os.listdir(case.local_path) if f.endswith(CAD_EXT)][0]
                         cad_path = os.path.join(case.local_path, cad_path)
