@@ -101,7 +101,7 @@ def main():
                     
                     try:
                         # TODO: Specify nprocs from command line
-                        cfd_job = CFD_job(case.local_path, nprocs=14)
+                        cfd_job = CFD_job(case.local_path, nprocs=22)
                         # FOR RIGHT NOW, ASSUMING NO MESH FILE EXISTS AND ALL RUNS ARE FROM CAD
                         cad_path = [f for f in os.listdir(case.local_path) if f.endswith(CAD_EXT)][0]
                         cad_path = os.path.join(case.local_path, cad_path)
@@ -117,7 +117,7 @@ def main():
                     finally:
                         case.unlock()
                 # if all cases ran successfully and -l is specified, exit and logout
-                    
+                return
 
             elif action == "3":
                 confirm = input("Are you sure? Only do this for debugging and NOT if anyone else is running cases.\n'y' to continue. Any other key to cancel.")

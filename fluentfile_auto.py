@@ -155,12 +155,12 @@ class CFD_job:
 
         # TODO: Create a setup file using the settings we decided on
         # Read only the setup from the case file, keeping the mesh you just created
-        solver.file.read_case(file_name=setup_file, read_data=False, read_mesh=False)
+        solver.settings.file.read_case(file_name=setup_file, read_data=False, read_mesh=False)
 
         # Initialize and run
-        # NOTE: CURRENTLY TAKES THE NUMBER OF ITERATIONS SPECIFIED IN THE SETUP FILE, so these lines seem to be ineffective
         solver.settings.solution.initialization.hybrid_initialize()
         solver.settings.solution.run_calculation.iterate(iter_count=iter)
+        solver.settings.file.write_case_data(file_name="Modified_Output.cas.h5")
 
         solver.exit()
 
@@ -172,7 +172,7 @@ class CFD_job:
                 full_path = os.path.join(self.case_folder, f)
                 with open(full_path) as file:
                     lines = file.readlines()
-                    report_name = lines[1].strip().split()[1]
+                    report_name = lines[1].strip().split()[1].strip('\"')
                     last_line = lines[-1]
                     num_iter, last_value = last_line.strip().split()
                     last_value = float(last_value)
