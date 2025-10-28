@@ -15,7 +15,7 @@ import sys
 from fluentfile_auto import CFD_job
 import threading
 
-SETUP_FILE = "mostcurrent_FFF.cas.h5"
+SETUP_FILE = "mostmostcurrent_FFF.cas.h5"
 CAD_EXT = '.step'
 TIMEOUT_SEC = 10
 logout = False

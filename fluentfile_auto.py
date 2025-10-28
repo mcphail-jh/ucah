@@ -179,7 +179,9 @@ class CFD_job:
                     output_json[report_name] = last_value
         
         # write json to the case folder
-        json.dump(output_json, os.path.join(self.case_folder, 'output.json'))
+        json_path = os.path.join(self.case_folder, 'output.json')
+        with open(json_path, 'w') as file:
+            json.dump(output_json, file)
         print("results saved to output.json")
         
 
