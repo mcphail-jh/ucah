@@ -3,70 +3,120 @@ import numpy as np
 import pickle
 from smt.surrogate_models import KRG
 
-# ---Names Input Files and Output Files----
-X_csv = "params.csv"        # first column = case name, top-left cell blank, top row contains 15 param names
-Y_csv = "aero_outputs.csv"  # top row: cl,cd,cm ; subsequent rows: 50 rows with matching order to params.csv
-models_out = { "cl": "krg_cl.pkl", "cd": "krg_cd.pkl", "cm": "krg_cm.pkl" } #files for kriging model output 
+# --- Input/Output File Names ---
+data_csv = "combined_aero_data.csv"  # single CSV with all params + cl, cd, cm
+models_out = {
+    "cl": "krg_cl.pkl",
+    "cd": "krg_cd.pkl",
+    "cm": "krg_cm.pkl",
+}
 
-# --- Load CSVs with pandas ---
-X_df = pd.read_csv(X_csv, header=0)
-Y_df = pd.read_csv(Y_csv, header=0)
+# --- Load CSV ---
+df = pd.read_csv(data_csv, header=0)
+print("Full data shape (with case name column):", df.shape)
 
-# Inspect shapes and output their # of rows and columns 
-print("X shape (with name column):", X_df.shape)
-print("Y shape:", Y_df.shape)
+# --- Identify columns ---
+n_params = 15
+param_cols = df.columns[1:1 + n_params]  # skip case name column
+aero_cols = ["cl", "cd", "cm"]
 
-# --- Drop first column (case names) of input parameters ---
-X = X_df.iloc[:, 1:].to_numpy(dtype=float)   # shape: (50, 15)
+# --- Basic checks ---
+if not all(c in df.columns for c in aero_cols):
+    raise ValueError(f"CSV must contain aerodynamic columns: {aero_cols}")
+
+# --- Split data ---
+X = df[param_cols].to_numpy(dtype=float)  # shape (n_cases, 15)
+Y = df[aero_cols].to_numpy(dtype=float)   # shape (n_cases, 3)
+
 print("Processed X shape (n_samples, n_params):", X.shape)
-
-# --- Preprocess Y: ensure we have exactly 3 columns named cl,cd,cm (case order matches X) ---
-expected_cols = ["cl", "cd", "cm"]
-if not all(c in Y_df.columns for c in expected_cols):
-    raise ValueError(f"Y CSV must contain columns: {expected_cols}. Found: {list(Y_df.columns)}")
-Y = Y_df[expected_cols].to_numpy(dtype=float)  # shape: (50, 3)
 print("Processed Y shape (n_samples, n_outputs):", Y.shape)
 
-# --- Basic check: same number of rows ---
-if X.shape[0] != Y.shape[0]:
-    raise ValueError("X and Y must have the same number of rows (cases).")
-
-# --- KRIGING TRAINING (One per output variable ) ---
-# Recommended: set hyper_opt to 'Cobyla' or 'BFGS' or leave default; theta0 can help converge.
-krg_options = dict(theta0=[1e-2]*X.shape[1], hyper_opt="Cobyla")  # example options
+# --- Train Kriging models ---
+krg_options = dict(theta0=[1e-2]*X.shape[1], hyper_opt="Cobyla")
 
 trained_models = {}
-for i, col in enumerate(expected_cols): #one KRG for each cl,cd,cm 
-    y_vec = Y[:, i]   # 1-D vector for SMT
+for i, col in enumerate(aero_cols):
+    y_vec = Y[:, i]
     print(f"\nTraining KRG for {col} ...")
-    sm = KRG(**krg_options)   # you can add eval_noise=True if your outputs are noisy
+    sm = KRG(**krg_options)
     sm.set_training_values(X, y_vec)
     sm.train()
     trained_models[col] = sm
 
-    # Save model to disk (pickle)
+    # Save model
     with open(models_out[col], "wb") as f:
         pickle.dump(sm, f)
     print(f"Saved {col} model to {models_out[col]}")
 
-# --- Example: predicting with the trained models ---
-# Suppose you have a new parameter set(s) X_new as numpy array shape (n_new, 15):
-# For demonstration use the first two training points:
-# X_new = X[:2, :]
 
-# predictions = {}
-# variances = {}
-# for col, sm in trained_models.items():
-#     y_pred = sm.predict_values(X_new)      # shape: (n_new, ) or (n_new,1)
-#     y_var  = sm.predict_variances(X_new)   # predictive variances
-#     predictions[col] = np.ravel(y_pred)
-#     variances[col]   = np.ravel(y_var)
-#     print(f"\nPredictions for {col}: {predictions[col]}")
-#     print(f"Variances  for {col}: {variances[col]}")
+# =======================================================================
+# === OPTIMIZATION OF L/D USING TRAINED KRG MODELS ======================
+# =======================================================================
 
-# # --- Optional: save predictions/variances as CSV ---
-# out_df = pd.DataFrame(predictions)
-# out_var_df = pd.DataFrame(variances)
-# out_df.to_csv("predictions_example.csv", index=False)
-# out_var_df.to_csv("pred_vars_example.csv", index=False)
-# print("\nDone.")
+import pickle
+from scipy.optimize import differential_evolution, minimize
+
+# --- Load the trained cl and cd Kriging models ---
+with open(models_out["cl"], "rb") as f:
+    krg_cl = pickle.load(f)
+with open(models_out["cd"], "rb") as f:
+    krg_cd = pickle.load(f)
+
+# --- Use same training data for parameter bounds ---
+X_train = X  # from earlier in script (shape: 50 x 15)
+bounds = [(np.min(X_train[:, j]), np.max(X_train[:, j])) for j in range(X_train.shape[1])]
+print("\nParameter bounds (from training data):")
+for i, (lo, hi) in enumerate(bounds):
+    print(f"  Param {i+1}: {lo:.6f} – {hi:.6f}")
+
+# --- Define predictor and objective ---
+def predict_L_over_D(x):
+    x = np.atleast_2d(x)
+    cl = krg_cl.predict_values(x).flatten()
+    cd = krg_cd.predict_values(x).flatten()
+    cd = np.maximum(cd, 1e-6)  # avoid divide-by-zero
+    return cl / cd
+
+def objective_to_minimize(x):
+    return -predict_L_over_D(x)[0]  # negative for maximization
+
+# --- Global optimization with Differential Evolution ---
+print("\nRunning global optimization (Differential Evolution)...")
+result_de = differential_evolution(
+    objective_to_minimize,
+    bounds=bounds,
+    strategy="best1bin",
+    popsize=15,
+    maxiter=200,
+    tol=1e-6,
+    seed=0,
+    disp=True
+)
+
+x_de = result_de.x
+ld_de = predict_L_over_D(x_de)[0]
+print("\nBest from Differential Evolution:")
+print(f"  L/D = {ld_de:.6f}")
+print("  Parameters:", x_de)
+
+# --- Local refinement with SLSQP ---
+print("\nRefining with local optimization (SLSQP)...")
+result_local = minimize(
+    objective_to_minimize,
+    x0=x_de,
+    method="SLSQP",
+    bounds=bounds,
+    options={"ftol": 1e-9, "maxiter": 500}
+)
+
+x_opt = result_local.x
+ld_opt = predict_L_over_D(x_opt)[0]
+print("\nOptimized Results:")
+print(f"  Refined L/D = {ld_opt:.6f}")
+print("  Refined parameters:", x_opt)
+
+# --- Compare to best in training data ---
+L_over_D_train = Y[:, 0] / Y[:, 1]  # cl/cd from your training data
+best_train_idx = np.argmax(L_over_D_train)
+print(f"\nBest training case L/D = {L_over_D_train[best_train_idx]:.6f} (case {best_train_idx})")
+ 
