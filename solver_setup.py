@@ -6,6 +6,8 @@ solver_session = pyfluent.launch_fluent(mode="solver",ui_mode=pyfluent.UIMode.GU
 mesh_path = os.path.join(wd,"Winged_Missile_2024.msh.h5")
 solver_session.file.read_case(file_name = mesh_path)
 
+solver_session.setup.general.solver.type = "density-based-implicit"
+
 # model : k-omega
 # k-omega model : sst
 
@@ -36,7 +38,6 @@ air.density.option = "ideal-gas"
 
 
 
-
 pressure_farfield = solver_session.setup.boundary_conditions.pressure_far_field[
     "inlet"
 ]
@@ -50,4 +51,29 @@ pressure_farfield.turbulence.turbulent_viscosity_ratio = 10
 
 pressure_outlet = solver_session.setup.boundary_conditions.pressure_outlet["outlet"]
 
-pressure_outlet.momentum.backflow_gauge_pressure =
+pressure_outlet.momentum.gauge_pressure = 10
+pressure_outlet.momentum.backflow_dir_spec_method = "Direction Vector"
+
+wall_cond = solver_session.setup.boundary_conditions.wall["vehicle"]
+
+wall_cond.thermal.thermal_condition = "Convection"
+print(vars(wall_cond.thermal))
+wall_cond.thermal.heat_transfer_coeff = 50
+wall_cond.thermal.free_stream_temp = 288.15
+
+sol = solver_session.solution
+report = sol.report_definitions
+print(vars(report))
+report.flux.create(name="rad_heat")
+report.flux.create(name="tot_heat")
+
+
+# not correct
+report.flux._objects["rad_heat"] = {"zones": ["vehicle"]}
+print(vars(report.flux))
+
+
+
+
+
+input()
