@@ -131,6 +131,51 @@ class CFD_job:
         mesher.workflow.TaskObject['Generate the Volume Mesh'].Arguments.set_state({r'PrismPreferences': {r'ShowPrismPreferences': False,},r'VolumeFill': r'polyhedra',r'VolumeFillControls': {r'GrowthRate': 1.15,r'TetPolyMaxCellLength': 0.5,},r'VolumeMeshPreferences': {r'ShowVolumeMeshPreferences': False,},})
         mesher.workflow.TaskObject['Generate the Volume Mesh'].Execute()
 
+    def _solver_journal(self, solver):
+        # density based solver
+
+        # energy on
+        # viscous: SST k-omega
+        # Materials -> air
+        # density: ideal gas
+        # Viscosity: sutherland
+        # Materials -> solid
+        # Granta MDS Database -> Titanium Ti6Al-4V Cast (grade 5)
+
+        # Boundary conditions
+        # Inlet
+        # pressure-farfield
+        # 0 Pa operating condition
+        # Gauge pressure 100 Pa
+        # Mach 5
+        # Set components of velocity for given AOA
+        # Thermal -> sea level temp or set temp to altitude
+
+        # Outlet
+        # Pressure outlet
+        # Gauge pressure: 10 Pa
+        # Check components given AOA
+        # Thermal -> sea level temp or set temp to altitude
+
+        # Wall
+        # Thermal -> Convection
+        # Heat transfer coeff. 50 W/(m^2 K) for now
+        # Freestream temp?
+        # Wall thickness: 0?
+
+        # Reference values -> compute from inlet
+
+        # Controls
+        # Courant number 0.09
+        
+        # Report Definitions
+        # Lift force, drag force, thermal something
+
+        # mesh adaption?
+
+
+        pass
+
 
     def run_fluent(self, setup_file, mesh_file=None, cad_file=None, iter=1000):
         '''
@@ -153,14 +198,13 @@ class CFD_job:
         else:
             raise Exception("A mesh file or CAD file must be specified!")
 
-        # TODO: Create a setup file using the settings we decided on
-        # Read only the setup from the case file, keeping the mesh you just created
-        solver.settings.file.read_case(file_name=setup_file, read_data=False, read_mesh=False)
+        # Call solver journal function to setup case (WIP)
+        self._solver_journal(solver)
 
         # Initialize and run
         solver.settings.solution.initialization.hybrid_initialize()
         solver.settings.solution.run_calculation.iterate(iter_count=iter)
-        solver.settings.file.write_case_data(file_name="Modified_Output.cas.h5")
+        solver.settings.file.write_case_data(file_name="Output.cas.h5")
 
         solver.exit()
 
