@@ -68,7 +68,7 @@ report.flux.create(name="rad_heat")
 report.flux.create(name="tot_heat")
 
 
-# not correct
+# not correct (reporting zone empty)
 report.flux._objects["rad_heat"] = {"zones": ["vehicle"]}
 print(vars(report.flux))
 
