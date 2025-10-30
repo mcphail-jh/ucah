@@ -79,6 +79,16 @@ rad_ht.report_type.set_state("flux-radheattransfer")
 rad_ht.boundaries.set_state("vehicle")
 create_report_file(solver_session,"rad_heat")
 
+# tot heat flux 
+report.flux['tot_heat'] = {}
+rad_ht = report.flux['tot_heat']
+rad_ht.report_type.set_state("flux-totheattransfer")
+rad_ht.boundaries.set_state("vehicle")
+create_report_file(solver_session,"tot_heat")
+
+
+
+
 
 
 
