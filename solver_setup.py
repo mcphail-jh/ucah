@@ -6,6 +6,8 @@ solver_session = pyfluent.launch_fluent(mode="solver",ui_mode=pyfluent.UIMode.GU
 mesh_path = os.path.join(wd,"Winged_Missile_2024.msh.h5")
 solver_session.file.read_case(file_name = mesh_path)
 
+solver_session.setup.models.energy.enabled = True
+
 # model : k-omega
 # k-omega model : sst
 
