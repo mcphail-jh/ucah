@@ -57,20 +57,30 @@ pressure_outlet.momentum.backflow_dir_spec_method = "Direction Vector"
 wall_cond = solver_session.setup.boundary_conditions.wall["vehicle"]
 
 wall_cond.thermal.thermal_condition = "Convection"
-print(vars(wall_cond.thermal))
 wall_cond.thermal.heat_transfer_coeff = 50
 wall_cond.thermal.free_stream_temp = 288.15
 
 sol = solver_session.solution
 report = sol.report_definitions
-print(vars(report))
-report.flux.create(name="rad_heat")
-report.flux.create(name="tot_heat")
+
+# report definitions
+
+def create_report_file(solver_session,rep_name):
+	file_rep = solver_session.solution.monitor.report_files
+	file_rep[rep_name+"-rfile"] = {}
+	file_obj = file_rep[rep_name+"-rfile"]
+	file_obj.report_defs.set_state(rep_name)
+
+	
+# rad heat flux
+report.flux['rad_heat'] = {}
+rad_ht = report.flux['rad_heat']
+rad_ht.report_type.set_state("flux-radheattransfer")
+rad_ht.boundaries.set_state("vehicle")
+create_report_file(solver_session,"rad_heat")
 
 
-# not correct
-report.flux._objects["rad_heat"] = {"zones": ["vehicle"]}
-print(vars(report.flux))
+
 
 
 
