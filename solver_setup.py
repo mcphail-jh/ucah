@@ -8,7 +8,7 @@ mesh_path = os.path.join(wd,"Winged_Missile_2024.msh.h5")
 solver_session.file.read_case(file_name = mesh_path)
 
 
-def solver_setup_journal(solver_session,AoA,mach):
+def solver_setup_journal(solver_session,AoA,mach,iter):
     solver_session.setup.general.solver.type = "density-based-implicit"
 
     # model : k-omega
@@ -64,6 +64,8 @@ def solver_setup_journal(solver_session,AoA,mach):
     wall_cond.thermal.heat_transfer_coeff = 50
     wall_cond.thermal.free_stream_temp = 288.15
 
+    ref_vals = solver_session.setup.reference_values.zone = "inlet"
+
     sol = solver_session.solution
     report = sol.report_definitions
 
@@ -85,16 +87,50 @@ def solver_setup_journal(solver_session,AoA,mach):
 
     # tot heat flux 
     report.flux['tot_heat'] = {}
-    rad_ht = report.flux['tot_heat']
-    rad_ht.report_type.set_state("flux-totheattransfer")
-    rad_ht.boundaries.set_state("vehicle")
+    tot_ht = report.flux['tot_heat']
+    tot_ht.report_type.set_state("flux-heattransfer")
+    tot_ht.boundaries.set_state("vehicle")
     create_report_file(solver_session,"tot_heat")
 
+    # lift force 
+    report.lift['lift_force'] = {}
+    lft = report.lift['lift_force']
+    lft.report_output_type.set_state("Lift Force")
+    lft.zones.set_state("vehicle")
+    create_report_file(solver_session,"lift_force")
 
+    # lift coeff
+    report.lift['lift_coeff'] = {}
+    lft = report.lift['lift_coeff']
+    lft.report_output_type.set_state("Lift Coefficient")
+    lft.zones.set_state("vehicle")
+    create_report_file(solver_session,"lift_coeff")
+
+    # drag force 
+    report.drag['drag_force'] = {}
+    lft = report.drag['drag_force']
+    lft.report_output_type.set_state("Drag Force")
+    lft.zones.set_state("vehicle")
+    create_report_file(solver_session,"drag_force")
+
+    # drag coeff
+    report.drag['drag_coeff'] = {}
+    lft = report.drag['drag_coeff']
+    lft.report_output_type.set_state("Drag Coefficient")
+    lft.zones.set_state("vehicle")
+    create_report_file(solver_session,"drag_coeff")
     input()
+    sol.controls.courant_number = .09
+    # 
+    session = solver_session
+    session.settings.solution.run_calculation.iter_count = 5
+    session.settings.solution.initialization.hybrid_initialize()
+    session.settings.solution.run_calculation.iterate(iter_count=iter)
+    
 
 
 if __name__ == "__main__":
     AoA = 5 # degrees
     mach = 5
-    solver_setup_journal(solver_session,AoA,mach)
+    Iter = 5
+    solver_setup_journal(solver_session,AoA,mach,Iter)
