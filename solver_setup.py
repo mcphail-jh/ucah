@@ -2,7 +2,7 @@ import ansys.fluent.core as pyfluent
 import os
 import numpy as np
 
-wd = os.path.join(os.getcwd(),"first test")
+wd = os.path.join(os.getcwd())
 solver_session = pyfluent.launch_fluent(mode="solver",ui_mode=pyfluent.UIMode.GUI, processor_count=5,cwd=wd)
 mesh_path = os.path.join(wd,"Winged_Missile_2024.msh.h5")
 solver_session.file.read_case(file_name = mesh_path)
@@ -42,9 +42,7 @@ def solver_setup_journal(solver_session,AoA,mach,iter):
     flow_x = np.cos(AoA)
     flow_z = np.sin(AoA)
 
-    ref_vals = solver_session.setup.reference_values
-    ref_vals.area = .15
-    ref_vals.
+
 
 
     pressure_farfield = solver_session.setup.boundary_conditions.pressure_far_field[
@@ -69,7 +67,16 @@ def solver_setup_journal(solver_session,AoA,mach,iter):
     wall_cond.thermal.heat_transfer_coeff = 50
     wall_cond.thermal.free_stream_temp = 288.15
 
-    ref_vals = solver_session.setup.reference_values.zone = "inlet"
+    ref = solver_session.setup.reference_values
+    ref.area = .15
+    ref.density = .001209025
+    ref.enthalpy = 1736426
+    ref.length = 1
+    ref.pressure = 100
+    ref.temperature = 288.15
+    ref.velocity = 1700.837
+    ref.viscosity = .00001789532
+    input()
 
     sol = solver_session.solution
     report = sol.report_definitions
