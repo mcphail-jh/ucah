@@ -42,6 +42,11 @@ def solver_setup_journal(solver_session,AoA,mach,iter):
     flow_x = np.cos(AoA)
     flow_z = np.sin(AoA)
 
+    ref_vals = solver_session.setup.reference_values
+    ref_vals.area = .15
+    ref_vals.
+
+
     pressure_farfield = solver_session.setup.boundary_conditions.pressure_far_field[
         "inlet"
     ]
@@ -121,6 +126,9 @@ def solver_setup_journal(solver_session,AoA,mach,iter):
     create_report_file(solver_session,"drag_coeff")
     input()
     sol.controls.courant_number = .09
+
+
+    solver_session.mesh.adapt.set
     # 
     session = solver_session
     session.settings.solution.run_calculation.iter_count = 5
