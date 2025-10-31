@@ -134,9 +134,11 @@ def solver_setup_journal(solver_session,AoA,mach,iter):
     input()
     sol.controls.courant_number = .09
 
-
-    solver_session.mesh.adapt.set
-    # 
+    apt = solver_session.mesh.adapt.set
+    apt.adaption_method = 'puma'
+    dyn = apt.dynamic_adaption()
+    dyn.enable = True
+    apt.dynamic_adaption_frequency = 100
     session = solver_session
     session.settings.solution.run_calculation.iter_count = 5
     session.settings.solution.initialization.hybrid_initialize()
