@@ -53,12 +53,15 @@ class CFD_job:
             inlet = []
             outlet = []
             vehicle_faces = []
+            symmetry = []
             for face in body.faces:
                 # bounding box is 5 x 5 x 2.5m, so those should be the only faces with area greater than 12m^2
                 if face.area.magnitude > 12.0:
                     # assumes nose of missile is facing negative x
                     if (face.normal().x == 1):
                         outlet.append(face)
+                    elif (face.normal().y == 1):
+                        symmetry.append(face)
                     else:
                         inlet.append(face)
                 else:
@@ -72,6 +75,7 @@ class CFD_job:
             design.create_named_selection("inlet",faces=inlet)
             design.create_named_selection("outlet",faces=outlet)
             design.create_named_selection("vehicle",faces=vehicle_faces)
+            design.create_named_selection("symmetry", faces=symmetry)
             print("Named selections created successfully.")
 
             # 5. Export the Design with Named Selections
@@ -177,7 +181,7 @@ class CFD_job:
         pass
 
 
-    def run_fluent(self, setup_file, mesh_file=None, cad_file=None, iter=1000):
+    def run_fluent(self, mesh_file=None, cad_file=None, iter=10000, adapt_frequency=1000):
         '''
         Run the case. Takes either a mesh file or CAD file (first calls mesh_geometry to mesh it)
         '''
@@ -199,16 +203,28 @@ class CFD_job:
             raise Exception("A mesh file or CAD file must be specified!")
 
         # Call solver journal function to setup case (WIP)
-        self._solver_journal(solver)
+        from solver_setup import solver_setup_journal
+        solver_setup_journal(solver)
 
         # Initialize and run
         solver.settings.solution.initialization.hybrid_initialize()
-        solver.settings.solution.run_calculation.iterate(iter_count=iter)
-        solver.settings.file.write_case_data(file_name="Output.cas.h5")
 
+        # hard-coded adaption behavior: if running more than 2000 iterations, adapt every 1000 after the initial 2000
+        criteria = solver.tui.mesh.adapt.predefined_criteria.aerodynamics.error_based.pressure_hessian_indicator
+        if iter > 2000:
+            solver.settings.solution.run_calculation.iterate(iter_count=2000)
+            iter -= 2000
+            # create automatic mesh refinement to run every 1000 iterations
+            solver.execute_tui("/mesh/adapt/predefined-criteria/aerodynamics/error-based/pressure-hessian-indicator")
+            solver.execute_tui(f"/mesh/adapt/manage-criteria/edit/pressure_hessian_0 frequency {adapt_frequency}")
+            solver.settings.mesh.adapt.adapt_mesh()
+        # if less than 2000 iterations, just run all of them with no adaption
+        # This line will also run the remaining iterations in the case of mesh adaption
+        solver.settings.solution.run_calculation.iterate(iter_count=iter)
+
+        solver.settings.file.write_case_data(file_name="output.cas.h5")
         solver.exit()
 
-        # TODO: figure out format for results file
         # read each rfile.out file and collect the last value to put into a output.json
         output_json = {}
         for f in os.listdir(self.case_folder):

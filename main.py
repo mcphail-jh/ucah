@@ -15,7 +15,6 @@ import sys
 from fluentfile_auto import CFD_job
 import threading
 
-SETUP_FILE = "mostmostcurrent_FFF.cas.h5"
 CAD_EXT = '.step'
 TIMEOUT_SEC = 10
 logout = False
@@ -106,8 +105,7 @@ def main():
                         cad_path = [f for f in os.listdir(case.local_path) if f.endswith(CAD_EXT)][0]
                         cad_path = os.path.join(case.local_path, cad_path)
                         # mesh and run case
-                        setup_file_path = os.path.join(manager.project_folder, SETUP_FILE)
-                        cfd_job.run_fluent(setup_file_path, cad_file=cad_path, iter=10)
+                        cfd_job.run_fluent(cad_file=cad_path, iter=50)
                         # TODO: Extract important data into json/csv
                         # upload the results to the remote folder
                         manager._upload_case(case)

@@ -2,13 +2,9 @@ import ansys.fluent.core as pyfluent
 import os
 import numpy as np
 
-wd = os.path.join(os.getcwd())
-solver_session = pyfluent.launch_fluent(mode="solver",ui_mode=pyfluent.UIMode.GUI, processor_count=5,cwd=wd)
-mesh_path = os.path.join(wd,"Winged_Missile_2024.msh.h5")
-solver_session.file.read_case(file_name = mesh_path)
 
 
-def solver_setup_journal(solver_session,AoA,mach,iter):
+def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     solver_session.setup.general.solver.type = "density-based-implicit"
 
     # model : k-omega
@@ -39,10 +35,8 @@ def solver_setup_journal(solver_session,AoA,mach,iter):
     # turbulent intensity : 5 [%]
     # turbulent viscosity ratio : 10
 
-    flow_x = np.cos(AoA)
-    flow_z = np.sin(AoA)
-
-
+    flow_x = np.cos(np.deg2rad(AoA))
+    flow_z = np.sin(np.deg2rad(AoA))
 
 
     pressure_farfield = solver_session.setup.boundary_conditions.pressure_far_field[
@@ -134,20 +128,34 @@ def solver_setup_journal(solver_session,AoA,mach,iter):
     input()
     sol.controls.courant_number = .09
 
+    # mesh adaption
+    '''
     apt = solver_session.mesh.adapt.set
     apt.adaption_method = 'puma'
     dyn = apt.dynamic_adaption()
     dyn.enable = True
     apt.dynamic_adaption_frequency = 100
-    session = solver_session
-    session.settings.solution.run_calculation.iter_count = 5
-    session.settings.solution.initialization.hybrid_initialize()
-    session.settings.solution.run_calculation.iterate(iter_count=iter)
+    '''
+
+    # add a new mesh adaption with pressure based hessian
+    #criteria = solver_session.tui.mesh.adapt.predefined_criteria.aerodynamics.error_based.pressure_hessian_indicator
+    #solver_session.tui.mesh.adapt.manage_criteria.add(criteria)
+
+    '''
+    solver_session.settings.solution.run_calculation.iter_count = 5
+    solver_session.settings.solution.initialization.hybrid_initialize()
+    solver_session.settings.solution.run_calculation.iterate(iter_count=iter)
+    '''
     
 
 
 if __name__ == "__main__":
+    wd = os.path.join(os.getcwd())
+    solver_session = pyfluent.launch_fluent(mode="solver",ui_mode=pyfluent.UIMode.GUI, processor_count=5,cwd=wd)
+    mesh_path = os.path.join(wd,"Winged_Missile_2024.msh.h5")
+    solver_session.file.read_case(file_name = mesh_path)
+
     AoA = 5 # degrees
     mach = 5
-    Iter = 5
-    solver_setup_journal(solver_session,AoA,mach,Iter)
+    iter = 5
+    solver_setup_journal(solver_session, AoA, mach, iter)
