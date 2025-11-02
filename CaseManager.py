@@ -228,14 +228,9 @@ class CaseManager():
 
 
 if __name__ == '__main__':
-
-
     # test code
-    '''
-    manager = CaseManager()
-    manager.set_project_folder('C:\\Users\\psh8ce\\Documents\\Prism')
-    manager.upload()
-    time.sleep(5)
-    manager.pull_cases()
-    print(manager.cases)
-    '''
+    manager = CaseManager(r"C:\Users\mcpha\Documents")
+    manager._update_remote_cases()
+    for case in manager.remote_cases:
+        print(case)
+
