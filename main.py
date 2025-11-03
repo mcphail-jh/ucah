@@ -13,7 +13,7 @@ import argparse
 import os
 import sys
 from fluentfile_auto import CFD_job
-import threading
+import time
 
 CAD_EXT = '.step'
 TIMEOUT_SEC = 10
@@ -85,6 +85,10 @@ def main():
                 n = int(input("Enter number of cases to pull: "))
                 while n <= 0:
                     n = int(input("Please enter a valid positive integer for number of cases: "))
+                
+                n_iter = int(input("Enter number of iterations per case: "))
+                while n_iter <= 0:
+                    n_iter = int(input("Please enter a valid positive integer for number of iterations: "))
 
                 # pull_cases returns a list of Case objects
                 queue = manager.pull_cases(n)
@@ -97,23 +101,33 @@ def main():
                 # run each case and move on to the next one if it failed
                 for i, case in enumerate(queue):
                     print(f"Running case {case.name} ({i+1}/{len(queue)})")
-                    
+                    start_time = time.time()
                     try:
-                        # TODO: Specify nprocs from command line
+                        # TODO: Specify number of processors from command line
                         cfd_job = CFD_job(case.local_path, nprocs=22)
+
                         # FOR RIGHT NOW, ASSUMING NO MESH FILE EXISTS AND ALL RUNS ARE FROM CAD
                         cad_path = [f for f in os.listdir(case.local_path) if f.endswith(CAD_EXT)][0]
                         cad_path = os.path.join(case.local_path, cad_path)
+
                         # mesh and run case
-                        cfd_job.run_fluent(cad_file=cad_path, iter=50)
-                        # TODO: Extract important data into json/csv
+                        cfd_job.run_fluent(cad_file=cad_path, iter=n_iter, adapt_frequency=1000)
+
                         # upload the results to the remote folder
                         manager._upload_case(case)
+
+                        # allow time for the files to upload
+                        time.sleep(10)
+
+                        # if successful, delete the local folder to save space
+                        manager.delete_local_folder(case)
                     
                     except Exception as e:
                         print(f"An error occured! {case.name}: {e}")
                     finally:
                         case.unlock()
+                        end_time = time.time()
+                        print(f"TOTAL TIME ELAPSED: {end_time - start_time} seconds")
                 # if all cases ran successfully and -l is specified, exit and logout
                 return
 

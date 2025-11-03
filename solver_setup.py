@@ -62,7 +62,7 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     wall_cond.thermal.free_stream_temp = 288.15
 
     ref = solver_session.setup.reference_values
-    ref.area = .15
+    ref.area = .15 # should be 0.015
     ref.density = .001209025
     ref.enthalpy = 1736426
     ref.length = 1
@@ -70,7 +70,6 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     ref.temperature = 288.15
     ref.velocity = 1700.837
     ref.viscosity = .00001789532
-    input()
 
     sol = solver_session.solution
     report = sol.report_definitions
@@ -125,7 +124,6 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     lft.report_output_type.set_state("Drag Coefficient")
     lft.zones.set_state("vehicle")
     create_report_file(solver_session,"drag_coeff")
-    input()
     sol.controls.courant_number = .09
 
     # mesh adaption

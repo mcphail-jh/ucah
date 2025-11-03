@@ -210,7 +210,6 @@ class CFD_job:
         solver.settings.solution.initialization.hybrid_initialize()
 
         # hard-coded adaption behavior: if running more than 2000 iterations, adapt every 1000 after the initial 2000
-        criteria = solver.tui.mesh.adapt.predefined_criteria.aerodynamics.error_based.pressure_hessian_indicator
         if iter > 2000:
             solver.settings.solution.run_calculation.iterate(iter_count=2000)
             iter -= 2000

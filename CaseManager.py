@@ -218,6 +218,21 @@ class CaseManager():
                 print(f"Error: Source file '{f}' not found.")
             except Exception as e:
                 print(f"An error occurred: {e}")
+
+
+    def delete_local_folder(self, case : Case):
+        '''
+        To save disk space, call this function to delete a local folder after solving and uploading to the remote folder
+        '''
+        folder_path = case.local_path
+
+        try:
+            shutil.rmtree(folder_path)
+            #print(f"Folder '{folder_path}' and its contents deleted successfully.")
+        except FileNotFoundError:
+            print(f"Error: Folder '{folder_path}' not found.")
+        except OSError as e:
+            print(f"Error deleting folder '{folder_path}': {e}")
     
 
     # ------------ setter functions ------------
