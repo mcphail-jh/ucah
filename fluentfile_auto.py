@@ -60,7 +60,7 @@ class CFD_job:
                     # assumes nose of missile is facing negative x
                     if (face.normal().x == 1):
                         outlet.append(face)
-                    elif (face.normal().y == 1):
+                    elif (face.normal().y == -1):
                         symmetry.append(face)
                     else:
                         inlet.append(face)

@@ -9,9 +9,9 @@ def main():
     # Place the inputs excel file and CAD part in this folder
 
     # --------- EDIT THESE PARAMETERS --------
-    NUM_SAMPLES = 45  # Number of configurations to generate
+    NUM_SAMPLES = 50  # Number of configurations to generate
     NUM_DECIMALS = 3 # only considers samples up to `NUM_DECIMALS` decimals
-    PROJECT_NAME = "parametric_v6" # name of the project folder in Documents
+    PROJECT_NAME = "Parametric_V10" # name of the project folder in Documents
     INPUT_FILE = 'param_template.xlsx' # name of the excel file holding the parameters and bounds
     
     project_folder = os.path.expanduser(f'~/Documents/{PROJECT_NAME}')

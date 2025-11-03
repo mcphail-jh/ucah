@@ -19,7 +19,7 @@ CAD_EXT = '.step'
 # default name of the folder in the OneDrive where cases are stored
 # can specify a different remote folder on initialization if desired (e.g. to work locally)
 REMOTE_FOLDER = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\")
-DB_NAME = "TestDatabase"
+DB_NAME = "Database"
 
 
 class CaseManager():
