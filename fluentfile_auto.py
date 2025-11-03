@@ -181,7 +181,7 @@ class CFD_job:
         pass
 
 
-    def run_fluent(self, mesh_file=None, cad_file=None, iter=10000, adapt_frequency=1000):
+    def run_fluent(self, mesh_file=None, cad_file=None, iter=10000, adapt_frequency=2000):
         '''
         Run the case. Takes either a mesh file or CAD file (first calls mesh_geometry to mesh it)
         '''
@@ -209,10 +209,12 @@ class CFD_job:
         # Initialize and run
         solver.settings.solution.initialization.hybrid_initialize()
 
-        # hard-coded adaption behavior: if running more than 2000 iterations, adapt every 1000 after the initial 2000
-        if iter > 2000:
-            solver.settings.solution.run_calculation.iterate(iter_count=2000)
-            iter -= 2000
+        # MESH ADAPTION
+        INITIAL_ITERATIONS = 3000
+        # hard-coded adaption behavior: if running more than the initial iterations, adapt every 1000 after the initial 2000
+        if iter > INITIAL_ITERATIONS:
+            solver.settings.solution.run_calculation.iterate(iter_count=INITIAL_ITERATIONS)
+            iter -= INITIAL_ITERATIONS
             # create automatic mesh refinement to run every 1000 iterations
             solver.execute_tui("/mesh/adapt/predefined-criteria/aerodynamics/error-based/pressure-hessian-indicator")
             solver.execute_tui(f"/mesh/adapt/manage-criteria/edit/pressure_hessian_0 frequency {adapt_frequency}")
