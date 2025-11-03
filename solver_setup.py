@@ -42,7 +42,7 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     pressure_farfield = solver_session.setup.boundary_conditions.pressure_far_field[
         "inlet"
     ]
-    pressure_farfield.momentum.gauge_pressure = 100
+    pressure_farfield.momentum.gauge_pressure = 530
     pressure_farfield.momentum.mach_number = mach
     pressure_farfield.thermal.temperature = 288.15
     pressure_farfield.momentum.flow_direction[0] = flow_x

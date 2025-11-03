@@ -62,7 +62,7 @@ def update_cases_in_excel(root_dir):
 
 if __name__ == "__main__":
     SHEET_NAME = "Master_Update.xlsx"
-    DB_NAME = "TestDatabase"
+    DB_NAME = "Database"
     remote_folder = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\" + DB_NAME)
     save_path = os.path.join(remote_folder, SHEET_NAME)
 
