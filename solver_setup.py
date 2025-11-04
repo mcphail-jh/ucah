@@ -14,10 +14,6 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
 
     viscous.model = "k-omega"
     viscous.k_omega_model = "sst"
-    
-    # enable compressibility effects and corner flow correction
-    solver_session.execute_tui(r"/define/models/viscous/turb-compressibility? yes")
-    solver_session.execute_tui(r"/define/models/viscous/corner-flow-correction? yes")
 
     # density : ideal-gas
     # viscosity : sutherland
@@ -128,8 +124,14 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     lft.report_output_type.set_state("Drag Coefficient")
     lft.zones.set_state("vehicle")
     create_report_file(solver_session,"drag_coeff")
+    
     # 11/3 increased from 0.09
     sol.controls.courant_number = .15
+
+    # enable compressibility effects and corner flow correction
+    solver_session.execute_tui(r"/define/models/viscous/turb-compressibility? yes")
+    solver_session.execute_tui(r"/define/models/viscous/corner-flow-correction? yes")
+
 
     # mesh adaption
     '''
