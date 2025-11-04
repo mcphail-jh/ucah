@@ -83,8 +83,8 @@ def main():
                 manager.upload_cad()
             elif action == "2":
                 n_procs = int(input("Enter number of processors: "))
-                while n_iter <= 0:
-                    n_iter = int(input("Please enter a valid positive integer for number of processors: "))
+                while n_procs <= 0:
+                    n_procs = int(input("Please enter a valid positive integer for number of processors: "))
                 
                 n = int(input("Enter number of cases to pull: "))
                 while n <= 0:
