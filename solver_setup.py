@@ -5,12 +5,12 @@ import numpy as np
 
 
 def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
-    solver_session.setup.general.solver.type = "density-based-implicit"
+    solver_session.settings.setup.general.solver.type = "density-based-implicit"
 
     # model : k-omega
     # k-omega model : sst
 
-    viscous = solver_session.setup.models.viscous
+    viscous = solver_session.settings.setup.models.viscous
 
     viscous.model = "k-omega"
     viscous.k_omega_model = "sst"
@@ -124,7 +124,14 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     lft.report_output_type.set_state("Drag Coefficient")
     lft.zones.set_state("vehicle")
     create_report_file(solver_session,"drag_coeff")
-    sol.controls.courant_number = .09
+    
+    # 11/3 increased from 0.09
+    sol.controls.courant_number = .15
+
+    # enable compressibility effects and corner flow correction
+    solver_session.execute_tui(r"/define/models/viscous/turb-compressibility? yes")
+    solver_session.execute_tui(r"/define/models/viscous/corner-flow-correction? yes")
+
 
     # mesh adaption
     '''

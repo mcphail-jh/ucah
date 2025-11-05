@@ -82,6 +82,10 @@ def main():
             if action == "1":
                 manager.upload_cad()
             elif action == "2":
+                n_procs = int(input("Enter number of processors: "))
+                while n_procs <= 0:
+                    n_procs = int(input("Please enter a valid positive integer for number of processors: "))
+                
                 n = int(input("Enter number of cases to pull: "))
                 while n <= 0:
                     n = int(input("Please enter a valid positive integer for number of cases: "))
@@ -104,14 +108,14 @@ def main():
                     start_time = time.time()
                     try:
                         # TODO: Specify number of processors from command line
-                        cfd_job = CFD_job(case.local_path, nprocs=22)
+                        cfd_job = CFD_job(case.local_path, nprocs=n_procs)
 
                         # FOR RIGHT NOW, ASSUMING NO MESH FILE EXISTS AND ALL RUNS ARE FROM CAD
                         cad_path = [f for f in os.listdir(case.local_path) if f.endswith(CAD_EXT)][0]
                         cad_path = os.path.join(case.local_path, cad_path)
 
                         # mesh and run case
-                        cfd_job.run_fluent(cad_file=cad_path, iter=n_iter, adapt_frequency=1000)
+                        cfd_job.run_fluent(cad_file=cad_path, iter=n_iter, adapt_frequency=2000)
 
                         # upload the results to the remote folder
                         manager._upload_case(case)

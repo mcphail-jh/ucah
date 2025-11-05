@@ -117,7 +117,7 @@ class CFD_job:
         mesher.workflow.TaskObject['Add Local Sizing'].Arguments.set_state({r'AddChild': r'yes',r'BOICellsPerGap': 1,r'BOIControlName': r'vehicle_size',r'BOICurvatureNormalAngle': 18,r'BOIExecution': r'Face Size',r'BOIFaceLabelList': [r'vehicle'],r'BOIGrowthRate': 1.15,r'BOISize': 0.0025,r'BOIZoneorLabel': r'label',})
         mesher.workflow.TaskObject['Add Local Sizing'].AddChildAndUpdate(DeferUpdate=False)
         mesher.workflow.TaskObject['Add Local Sizing'].Execute()
-        mesher.workflow.TaskObject['Generate the Surface Mesh'].Arguments.set_state({r'CFDSurfaceMeshControls': {r'CellsPerGap': 1,r'CurvatureNormalAngle': 14,r'MaxSize': 0.3,r'MinSize': 0.002,},})
+        mesher.workflow.TaskObject['Generate the Surface Mesh'].Arguments.set_state({r'CFDSurfaceMeshControls': {r'CellsPerGap': 1,r'CurvatureNormalAngle': 8,r'MaxSize': 0.3,r'MinSize': 0.002,},})
         mesher.workflow.TaskObject['Generate the Surface Mesh'].Execute()
         mesher.workflow.TaskObject['Describe Geometry'].UpdateChildTasks(Arguments={r'v1': True,}, SetupTypeChanged=False)
         mesher.workflow.TaskObject['Describe Geometry'].Arguments.set_state({r'NonConformal': r'No',r'SetupType': r'The geometry consists of only fluid regions with no voids',})
@@ -181,7 +181,7 @@ class CFD_job:
         pass
 
 
-    def run_fluent(self, mesh_file=None, cad_file=None, iter=10000, adapt_frequency=1000):
+    def run_fluent(self, mesh_file=None, cad_file=None, iter=10000, adapt_frequency=2000):
         '''
         Run the case. Takes either a mesh file or CAD file (first calls mesh_geometry to mesh it)
         '''
@@ -209,10 +209,12 @@ class CFD_job:
         # Initialize and run
         solver.settings.solution.initialization.hybrid_initialize()
 
-        # hard-coded adaption behavior: if running more than 2000 iterations, adapt every 1000 after the initial 2000
-        if iter > 2000:
-            solver.settings.solution.run_calculation.iterate(iter_count=2000)
-            iter -= 2000
+        # MESH ADAPTION
+        INITIAL_ITERATIONS = 3000
+        # hard-coded adaption behavior: if running more than the initial iterations, adapt every 1000 after the initial 2000
+        if iter > INITIAL_ITERATIONS:
+            solver.settings.solution.run_calculation.iterate(iter_count=INITIAL_ITERATIONS)
+            iter -= INITIAL_ITERATIONS
             # create automatic mesh refinement to run every 1000 iterations
             solver.execute_tui("/mesh/adapt/predefined-criteria/aerodynamics/error-based/pressure-hessian-indicator")
             solver.execute_tui(f"/mesh/adapt/manage-criteria/edit/pressure_hessian_0 frequency {adapt_frequency}")
