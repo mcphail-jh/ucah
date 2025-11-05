@@ -65,6 +65,8 @@ if __name__ == "__main__":
     DB_NAME = "Database"
     remote_folder = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\" + DB_NAME)
     save_path = os.path.join(remote_folder, SHEET_NAME)
+    # below line is used for local testing
+    #save_path = os.path.expanduser("~\\Downloads\\Master_Update.xlsx")
 
     # get dataframe with updated cases and fill nan values with empty strings
     df = update_cases_in_excel(remote_folder)
@@ -75,26 +77,33 @@ if __name__ == "__main__":
     # only populate the first row with the timestamp
     df['Last Updated'] = [formatted_time] + ['' for i in range(df.shape[0]-1)]
 
-    # Use this engine to access xlsxwriter features
+    # Create a Pandas Excel writer using XlsxWriter as the engine.
     writer = pd.ExcelWriter(save_path, engine='xlsxwriter')
 
-    # Write the DataFrame to the worksheet. Don't write headers or index yet.
-    df.to_excel(writer, sheet_name='Sheet1', startrow=0, startcol=0, header=False, index=False)
+    # Convert the dataframe to an XlsxWriter Excel object. Turn off the default
+    # header and index and skip one row to allow us to insert a user defined
+    # header.
+    df.to_excel(writer, sheet_name='Sheet1', startrow=1, header=False, index=False)
 
-    # Access the xlsxwriter workbook and worksheet objects
+    # Get the xlsxwriter workbook and worksheet objects.
     workbook = writer.book
     worksheet = writer.sheets['Sheet1']
 
-    # Define the table range dynamically using DataFrame dimensions:
-    # The range is defined as (first_row, first_col, last_row, last_col)
-    # Note: dimensions must be adjusted for 0-based indexing vs Excel 1-based.
-    # df.shape[0] is number of rows, df.shape[1] is number of columns.
-    # We add headers manually using the columns list.
-    end_row = df.shape[0] 
-    end_col = df.shape[1] - 1 # 0-indexed column
+    # Get the dimensions of the dataframe.
+    (max_row, max_col) = df.shape
 
-    worksheet.add_table(0, 0, end_row, end_col, {'data': df.values.tolist(), 'columns': [{'header': col} for col in df.columns]})
+    # Create a list of column headers, to use in add_table().
+    column_settings = []
+    for header in df.columns:
+        column_settings.append({'header': header})
 
+    # Add the table.
+    worksheet.add_table(0, 0, max_row, max_col - 1, {'columns': column_settings})
+
+    # Make the columns wider for clarity.
+    worksheet.set_column(0, max_col - 1, 12)
+
+    # Close the Pandas Excel writer and output the Excel file.
     writer.close()
     print(f"Updated worksheet saved to {SHEET_NAME}")
 
