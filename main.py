@@ -14,9 +14,10 @@ import os
 import sys
 from fluentfile_auto import CFD_job
 import time
+import threading
 
 CAD_EXT = '.step'
-TIMEOUT_SEC = 10
+TIMEOUT_SEC = 30
 logout = False
 
 def _parse_args():
@@ -38,23 +39,27 @@ def _choose_folder_via_dialog():
         print('Error opening folder dialog:', e, file=sys.stderr)
         return ''
 
-'''
-def timeout_logout():
-        print("LOGOUT CODE")
-'''
+
+def timeout_logout(queue):
+        try:
+            if queue is not None and len(queue) > 0:
+                print("Releasing locks on pulled cases...")
+                for case in queue:
+                    case.unlock()
+                print("Done.")
+        finally:
+            print("Logging out since timeout was exceeded")
+            os.system('shutdown /l')
+
 
 def main():
     queue = None
 
     try:
-        '''
-        timer = threading.Timer(TIMEOUT_SEC, timeout_logout)
-        timer.start()
-        '''
 
         args = _parse_args()
-        global logout
-        logout = args.l
+        #global logout
+        #logout = args.l
 
         project_folder = _choose_folder_via_dialog()
         if not project_folder:
@@ -70,6 +75,20 @@ def main():
         except Exception as e:
             print('Failed to import CaseManager:', e, file=sys.stderr)
             return
+        
+        
+        logout_input = input("Do you want to logout when done? (y/n): ")
+        if logout_input == "y":
+            timeout = int(input("How many seconds until logout?: "))
+            global logout, TIMEOUT_SEC
+            logout = True
+            TIMEOUT_SEC = timeout
+
+
+        if logout:
+            timer = threading.Timer(TIMEOUT_SEC, timeout_logout, args=[queue])
+            timer.start()
+            print(f"Logout timer for {TIMEOUT_SEC} starting now")
         
         manager = CaseManager(project_folder)
         queue = None
@@ -150,14 +169,17 @@ def main():
             print("Releasing locks on pulled cases...")
             for case in queue:
                 case.unlock()
+            print("Done")
     except Exception as e:
         if queue is not None and len(queue) > 0:
             print("Releasing locks on pulled cases...")
             for case in queue:
                 case.unlock()
+            print("Done.")
         print('An unexpected error occurred:', e, file=sys.stderr)
     finally:
         if logout:
+            print("Logging out since work ended")
             os.system('shutdown /l')
         
 

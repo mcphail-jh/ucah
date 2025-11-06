@@ -18,8 +18,8 @@ CAD_EXT = '.step'
 
 # default name of the folder in the OneDrive where cases are stored
 # can specify a different remote folder on initialization if desired (e.g. to work locally)
-REMOTE_FOLDER = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\")
-DB_NAME = "Database"
+REMOTE_FOLDER = os.path.expanduser("~\\Documents")
+DB_NAME = "remote"
 
 
 class CaseManager():
@@ -104,7 +104,7 @@ class CaseManager():
             except FileNotFoundError:
                 print(f"Error: Source file '{source_file}' not found.")
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error uploading CAD files in {folder_name} occurred: {e}")
         print(f"Uploaded {len(igs_files)//2} CAD file cases")
             
 
@@ -192,7 +192,7 @@ class CaseManager():
             except FileNotFoundError:
                 print(f"Error: Source file '{f}' not found.")
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error downloading the case {folder_name} occurred: {e}")
         return local_path
     
     def _upload_case(self, case : Case):
@@ -217,7 +217,7 @@ class CaseManager():
             except FileNotFoundError:
                 print(f"Error: Source file '{f}' not found.")
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred trying to upload case {case.name}: {e}")
 
 
     def delete_local_folder(self, case : Case):
