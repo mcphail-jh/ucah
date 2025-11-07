@@ -153,7 +153,7 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     solver_session.settings.solution.initialization.hybrid_initialize()
     solver_session.settings.solution.run_calculation.iterate(iter_count=iter)
     '''
-    
+    input()
 
 
 if __name__ == "__main__":
