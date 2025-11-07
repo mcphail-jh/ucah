@@ -102,6 +102,7 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     lft = report.lift['lift_force']
     lft.report_output_type.set_state("Lift Force")
     lft.zones.set_state("vehicle")
+    lft.force_vector.set_state([0,0,1])
     create_report_file(solver_session,"lift_force")
 
     # lift coeff
@@ -109,6 +110,7 @@ def solver_setup_journal(solver_session : pyfluent.Solver, AoA=5, mach=5):
     lft = report.lift['lift_coeff']
     lft.report_output_type.set_state("Lift Coefficient")
     lft.zones.set_state("vehicle")
+    lft.force_vector.set_state([0,0,1])
     create_report_file(solver_session,"lift_coeff")
 
     # drag force 
