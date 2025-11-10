@@ -208,23 +208,24 @@ class CFD_job:
 
         # Initialize and run
         solver.settings.solution.initialization.hybrid_initialize()
-
-        # MESH ADAPTION
-        INITIAL_ITERATIONS = 3000
-        # hard-coded adaption behavior: if running more than the initial iterations, adapt every 1000 after the initial 2000
-        if iter > INITIAL_ITERATIONS:
-            solver.settings.solution.run_calculation.iterate(iter_count=INITIAL_ITERATIONS)
-            iter -= INITIAL_ITERATIONS
-            # create automatic mesh refinement to run every 1000 iterations
-            solver.execute_tui("/mesh/adapt/predefined-criteria/aerodynamics/error-based/pressure-hessian-indicator")
-            solver.execute_tui(f"/mesh/adapt/manage-criteria/edit/pressure_hessian_0 frequency {adapt_frequency}")
-            solver.settings.mesh.adapt.adapt_mesh()
-        # if less than 2000 iterations, just run all of them with no adaption
-        # This line will also run the remaining iterations in the case of mesh adaption
-        solver.settings.solution.run_calculation.iterate(iter_count=iter)
-
-        solver.settings.file.write_case_data(file_name="output.cas.h5")
-        solver.exit()
+        try:
+            # MESH ADAPTION
+            INITIAL_ITERATIONS = 3000
+            # hard-coded adaption behavior: if running more than the initial iterations, adapt every 1000 after the initial 2000
+            if iter > INITIAL_ITERATIONS:
+                solver.settings.solution.run_calculation.iterate(iter_count=INITIAL_ITERATIONS)
+                iter -= INITIAL_ITERATIONS
+                # create automatic mesh refinement to run every 1000 iterations
+                solver.execute_tui("/mesh/adapt/predefined-criteria/aerodynamics/error-based/pressure-hessian-indicator")
+                solver.execute_tui(f"/mesh/adapt/manage-criteria/edit/pressure_hessian_0 frequency {adapt_frequency}")
+                solver.settings.mesh.adapt.adapt_mesh()
+            # if less than 2000 iterations, just run all of them with no adaption
+            # This line will also run the remaining iterations in the case of mesh adaption
+            solver.settings.solution.run_calculation.iterate(iter_count=iter)
+        
+        finally:
+            solver.settings.file.write_case_data(file_name="output.cas.h5")
+            solver.exit()
 
         # read each rfile.out file and collect the last value to put into a output.json
         output_json = {}
