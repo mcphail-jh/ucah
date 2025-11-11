@@ -130,7 +130,7 @@ def main():
                         cfd_job = CFD_job(case.local_path, nprocs=n_procs)
 
                         # FOR RIGHT NOW, ASSUMING NO MESH FILE EXISTS AND ALL RUNS ARE FROM CAD
-                        cad_path = [f for f in os.listdir(case.local_path) if f.endswith(CAD_EXT)][0]
+                        cad_path = [f for f in os.listdir(case.local_path) if f.lower().endswith(CAD_EXT)][0]
                         cad_path = os.path.join(case.local_path, cad_path)
 
                         # mesh and run case

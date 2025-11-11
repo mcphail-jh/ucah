@@ -198,7 +198,7 @@ class CFD_job:
         # otherwise if a cad_file is given, mesh it first then switch to solver mode
         elif cad_file is not None:
             mesher = self._mesh_geometry(cad_file)
-            #mesher.tui.file.write_mesh(path=os.path.join(self.case_folder, "mesh.msh.h5"))
+            mesher.tui.file.write_mesh(path=os.path.join(self.case_folder, "mesh.msh.h5"))
             solver = mesher.switch_to_solver()
         else:
             raise Exception("A mesh file or CAD file must be specified!")
