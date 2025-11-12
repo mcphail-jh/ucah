@@ -10,7 +10,7 @@ def generate_output_json(case_folder):
     # read each rfile.out file and collect the last value to put into a output.json
     output_json = {}
     for f in os.listdir(case_folder):
-        if f.endswith('rfile.out'):
+        if f.endswith('.out') and not f.endswith("1_1.out"):
             full_path = os.path.join(case_folder, f)
             with open(full_path) as file:
                 lines = file.readlines()
@@ -30,7 +30,7 @@ def generate_output_json(case_folder):
 
 if __name__ == "__main__":
     folder = ' '.join(sys.argv[1::])
-    print(folder)
+    #print(folder)
 
     if not os.path.isdir(folder):
         print("Error! Please enter a valid folder path!")
