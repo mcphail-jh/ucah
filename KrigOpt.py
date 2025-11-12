@@ -3,6 +3,7 @@ from smt.kernels import PowExp
 import numpy as np
 import pickle
 
+
 def importPKL(path, type_return):
     with open(path, 'rb') as file:
         to_return = pickle.load(file)
@@ -15,6 +16,50 @@ def importPKL(path, type_return):
 def SM_transform(sm: KRG, x: np.array) -> np.array:
     # Transforms the input vector x into the space used by the surrogate model.
     return (x - sm.X_offset) / sm.X_scale
+
+def eval_SM_Jacobian(sm : KRG, x: np.array) -> np.array:
+    b = sm.optimal_par["beta"]
+    g = sm.optimal_par["gamma"]
+    t = sm.corr.theta
+
+    xt : np.array = sm.training_points[None][0][0] # training parameter values.
+    num_points, num_dims = xt.shape
+    X = SM_transform(sm, xt)
+
+    dx = SM_transform(sm, x)
+    R = np.exp(-t * np.linalg.norm(dx - X, axis=1) ** 2).reshape([num_points, 1]) # TODO: make this more efficient
+    J = np.zeros([num_dims, 1])
+    for k in range(0, num_dims):
+        out = 0
+        for i in range(0, num_points):
+            out += - g[i] * t * (dx[k] - X[i, k]) * R[i]
+        J[k] = out
+    return 2 * sm.y_std * J / sm.X_scale
+
+def eval_SM_Hessian(sm : KRG, x: np.array) -> np.array:
+    b = sm.optimal_par["beta"]
+    g = sm.optimal_par["gamma"]
+    t = sm.corr.theta
+
+    xt : np.array = sm.training_points[None][0][0] # training parameter values.
+    num_points, num_dims = xt.shape
+    X = SM_transform(sm, xt)
+
+    dx = SM_transform(sm, x)
+    R = np.exp(-t * np.linalg.norm(dx - X, axis=1) ** 2).reshape([num_points, 1]) # TODO: make this more efficient
+    H = np.zeros([num_dims, num_dims])
+    for i in range(0, num_dims):
+        for j in range(0, num_dims):
+            out = 0
+            if i == j:
+                for k in range(0, num_points):
+                    out += g[k] * t * ((dx[i] - X[k, i])**2 - 1) * R[k]
+            else:
+                for k in range(0, num_points):
+                    out += 4 * g[k] * (t**2) * (dx[i] - X[k, i]) * (dx[j] - X[k, j]) * R[k]
+            H[i, j] = out
+    return sm.y_std * H / sm.X_scale
+
 
 def eval_SM_value(sm: KRG, x: np.array) -> np.array:
     b = sm.optimal_par["beta"]
@@ -38,14 +83,6 @@ def eval_SM_value(sm: KRG, x: np.array) -> np.array:
         y_s = sum(g * R)
         y[i] = sm.y_mean + sm.y_std * (b + y_s)
     return y
-
-def eval_SM_Jacobian(sm, x):
-    # TODO: implement this method
-    # J = [g dRdx] + [1 - I]*R <- from product rule.
-    #    dRdx is an [m x n] Jacobian matrix of the autocorrelation function.
-    #    R is [m x n] autocorrelation matrix
-    return
-
 class KrigOpt:
     _debug : bool # if true, prints extra information during operation.
     ObjFuncSM : KRG # Kriging surrogate model of the objective function over the design space.
