@@ -29,7 +29,8 @@ def generate_output_json(case_folder):
 
 
 if __name__ == "__main__":
-    folder = sys.argv[1]
+    folder = ' '.join(sys.argv[1::])
+    print(folder)
 
     if not os.path.isdir(folder):
         print("Error! Please enter a valid folder path!")
