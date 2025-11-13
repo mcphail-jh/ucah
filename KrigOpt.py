@@ -77,12 +77,16 @@ def eval_SM_value(sm: KRG, x: np.array) -> np.array:
 
     y = np.zeros([num_x, 1])
 
+
     for i in range(0, num_x): # Should be able to get rid of this for loop using a 3d array.
         dx = np.repeat(SM_transform(sm, x[i,:]), m).reshape([m, n])
-        R = np.exp(-t * np.linalg.norm(dx - X, axis=1)**2).reshape([m, 1])  # TODO: make this more efficient
+        print(np.sum(t * (dx - X)**2, axis=1))
+        R = np.exp(-np.sum(t * (dx - X)**2, axis=1)).reshape([m, 1])  # TODO: make this more efficient
         y_s = sum(g * R)
         y[i] = sm.y_mean + sm.y_std * (b + y_s)
     return y
+
+
 class KrigOpt:
     _debug : bool # if true, prints extra information during operation.
     ObjFuncSM : KRG # Kriging surrogate model of the objective function over the design space.
