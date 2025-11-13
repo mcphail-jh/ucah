@@ -30,10 +30,18 @@ def generate_output_json(case_folder):
 
 if __name__ == "__main__":
     folder = ' '.join(sys.argv[1::])
-    #print(folder)
-
-    if not os.path.isdir(folder):
-        print("Error! Please enter a valid folder path!")
-    else:
-        generate_output_json(folder)
-    
+    if sys.argv[1] == '-r':
+        top_level_folder = ' '.join(sys.argv[2::])
+        if not os.path.isdir(top_level_folder):
+            print("Error! Please enter a valid folder path!")
+        else:
+            for subfolder in os.listdir(top_level_folder):
+                full_path = os.path.join(top_level_folder, subfolder)
+                generate_output_json(full_path)
+ 
+    else: # if -r is not specified, generate output json for this one folder
+        if not os.path.isdir(folder):
+            print("Error! Please enter a valid folder path!")
+        else:
+            generate_output_json(folder)
+        
