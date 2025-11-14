@@ -55,13 +55,11 @@ class CFD_job:
             vehicle_faces = []
             symmetry = []
             for face in body.faces:
-                # bounding box is 5 x 5 x 2.5m, so those should be the only faces with area greater than 12m^2
-                if face.area.magnitude > 12.0:
+                # bounding box is 5 x 5 x 5m, so those should be the only faces with area greater than 24m^2
+                if face.area.magnitude > 24.0:
                     # assumes nose of missile is facing negative x
                     if (face.normal().x == 1):
                         outlet.append(face)
-                    elif (face.normal().y == -1):
-                        symmetry.append(face)
                     else:
                         inlet.append(face)
                 else:
