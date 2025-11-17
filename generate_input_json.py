@@ -2,12 +2,11 @@
 Function to manually create an input json file 
 (useful if you're importing manual cases or cases from rivanna which don't have an input json file)
 
-Pulls the 'define' values from the journal files in `case_folder`
+Pulls the 'define' values from the journal file in `case_folder`
 '''
 import os, json, sys
 
 def generate_input_json(case_folder):
-    # read each rfile.out file and collect the last value to put into a output.json
     folder_name = os.path.basename(case_folder)
     input_json = {"Name": folder_name}
 

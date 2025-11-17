@@ -7,8 +7,15 @@ import pandas as pd
 import os
 import json
 from datetime import datetime
+from generate_input_json import *
+from generate_output_json import *
 
-def update_cases_in_excel(root_dir):
+def update_cases(root_dir):
+    '''
+    Walks through each subfolder in `root_dir`, attempts to generate the input and output JSOn files, then reads them into a master dataframe.
+
+    Returns a dataframe with the updated values from each case/subfolder in the root folder.
+    '''
     all_data = [] # List to store dictionaries (each dict will be a row)
 
     # Use os.walk to iterate through all subdirectories
@@ -16,60 +23,68 @@ def update_cases_in_excel(root_dir):
         # Skip the root directory itself if it doesn't contain the data structure
         if dirpath == root_dir:
             continue
+
+        case_name = os.path.basename(dirpath)
+
+        # attempt to generate input and output json files. If there is an issue, skip the case and print a warning message
+        try:
+            generate_input_json(dirpath)
+            generate_output_json(dirpath)
+        except:
+            print(f"Could not generate JSON for case {case_name}. Skipping.")
+            continue
         
-        folder_name = os.path.basename(dirpath)
-        
-        # Determine the expected JSON filename (e.g., "FolderA.json")
-        json_filename = f"{folder_name}.json"
+        # Determine the expected JSON filename (e.g., "Case_1.json")
+        json_filename = f"{case_name}.json"
         json_file_path = os.path.join(dirpath, json_filename)
         
         # Check if the primary JSON file exists
         if not os.path.exists(json_file_path):
             # print(f"Skipping folder {folder_name}: {json_filename} not found.")
             continue
-            
+        
+        # IGNORING STATUS since rivanna cases are only uploaded after they are done
+        '''
         # Initialize the status variable
-        status = "Not Done"
+        status = "Output JSON Missing"
+        
         
         # --- Determine Status and handle output.json ---
         output_file_path = os.path.join(dirpath, 'output.json')
         lock_file_path = os.path.join(dirpath, 'lock.txt')
-
+        
         if os.path.exists(output_file_path):
             status = "Done"
         elif os.path.exists(lock_file_path):
             status = "Locked"
-        
+        '''
+
         # --- Load data ---
         with open(json_file_path, 'r') as f:
             row_data = json.load(f)
         
-        row_data['Status'] = status # Add the determined status
-        
         # If output.json exists, also load its data into the row
-        if status == "Done":
+        output_file_path = os.path.join(dirpath, 'output.json')
+        if os.path.exists(output_file_path):
             with open(output_file_path, 'r') as f:
                 output_data = json.load(f)
                 row_data.update(output_data) # Merge output data
 
         all_data.append(row_data)
 
+        #row_data['Status'] = status # Finally, add the determined status
+
     # Create the final DataFrame
     df = pd.DataFrame(all_data)
-    print(f"Updated dataframe with {len(all_data)} rows")
+    print(f"Updated dataframe with {len(all_data)} cases")
     return df
 
+def write_master_excel(df : pd.DataFrame, save_dir : str, filename="Master.xlsx"):
+    '''
+    Saves the df as an excel file inside `save_dir`. Adds a column for a timestamp and converts the df cells to an excel table.
+    '''
+    save_path = os.path.join(save_dir, filename)
 
-if __name__ == "__main__":
-    SHEET_NAME = "Master_Update.xlsx"
-    DB_NAME = "Database"
-    remote_folder = os.path.expanduser("~\\OneDrive - University of Virginia\\UCAH Hypersonic Design Competition Capstone Group - Documents\\" + DB_NAME)
-    save_path = os.path.join(remote_folder, SHEET_NAME)
-    # below line is used for local testing
-    #save_path = os.path.expanduser("~\\Downloads\\Master_Update.xlsx")
-
-    # get dataframe with updated cases and fill nan values with empty strings
-    df = update_cases_in_excel(remote_folder)
     df = df.fillna('')
     # add column for timestamp
     now = datetime.now()
@@ -105,6 +120,36 @@ if __name__ == "__main__":
 
     # Close the Pandas Excel writer and output the Excel file.
     writer.close()
-    print(f"Updated worksheet saved to {SHEET_NAME}")
+    print(f"Updated worksheet saved to {filename}")
 
-    #df.to_excel(save_path, index=False)
+
+def choose_folder_via_dialog():
+    '''
+    Function to select a folder in the file dialog if no arguments are passed
+    '''
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        folder = filedialog.askdirectory(title='Select project folder')
+        root.destroy()
+        return folder
+    except Exception as e:
+        print('Error opening folder dialog:', e, file=sys.stderr)
+        return ''
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('folder', nargs='?')
+    args = parser.parse_args()
+
+    if args.folder is None:
+        folder = choose_folder_via_dialog()
+    else:
+        folder = args.folder
+
+    # get dataframe with updated cases and fill nan values with empty strings
+    df = update_cases(folder)
+    write_master_excel(df, folder)
