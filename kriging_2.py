@@ -7,7 +7,8 @@ def GenerateSM(
         data_path : str,
         param_num : int,
         objective_name : str,
-        output_path : str = None
+        output_path : str = None,
+        correction_factor : float = 1
 ):
     # --- Load CSV ---
     data_file = pd.read_csv(data_path, header=0)
@@ -22,7 +23,7 @@ def GenerateSM(
 
     # --- Split Data ---
     X = data_file[param_cols].to_numpy(dtype=float)
-    Y = data_file[objective_name].to_numpy(dtype=float)
+    Y = correction_factor * data_file[objective_name].to_numpy(dtype=float)
 
     print(f"Processed X shape (n_samples, n_params): {X.shape}")
     print(f"Processed Y shape (n_samples, n_params): {Y.shape}")

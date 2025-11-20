@@ -1,7 +1,9 @@
 from smt.surrogate_models import KRG
 from smt.kernels import PowExp
+
 import numpy as np
 import pickle
+from matplotlib import pyplot as plt
 
 
 def importPKL(path, type_return):
@@ -60,7 +62,6 @@ def eval_SM_Hessian(sm : KRG, x: np.array) -> np.array:
             H[i, j] = out
     return sm.y_std * H / sm.X_scale
 
-
 def eval_SM_value(sm: KRG, x: np.array) -> np.array:
     b = sm.optimal_par["beta"]
     g = sm.optimal_par["gamma"]
@@ -106,3 +107,25 @@ class KrigOpt:
             raise ValueError("Surrogate model not trained with correct exponential power. Please leave as default '2.0'.")
         self.ObjFuncSM = ObjFuncSM
         if self._debug: print("Successfully set surrogate model.")
+
+    def evalPathValues(self, x0, dir, bounds, n=100):
+        x_dims = x0.size
+        x = np.linspace(bounds[0], bounds[1], n).reshape([n, 1]) * np.repeat(dir.reshape([1, x_dims]), n, axis=0) + np.repeat(x0.reshape([1, x_dims]), n, axis=0)
+        y = self.ObjFuncSM.predict_values(x)
+        return y.reshape(-1)
+
+    def evalPathVariances(self, x0, dir, bounds, n=100):
+        x_dims = x0.size
+        x = np.linspace(bounds[0], bounds[1], n).reshape([n, 1]) * np.repeat(dir.reshape([1, x_dims]), n, axis=0) + np.repeat(x0.reshape([1, x_dims]), n, axis=0)
+        u = self.ObjFuncSM.predict_variances(x)
+        return u.reshape(-1)
+
+    def plotPath(self, x0, dir, bounds, n=100, color=None, label=None, var:bool=True):
+
+        x = np.linspace(bounds[0], bounds[1], n) + np.dot(x0, dir)
+        y = self.evalPathValues(x0, dir, bounds, n)
+        line, = plt.plot(x, y, color=color, label=label)
+
+        if var:
+            u = self.evalPathVariances(x0, dir, bounds, n)
+            plt.fill_between(x, y + 2 * u, y - 2 * u, color=line.get_color(), alpha=0.5, linewidth=0)
