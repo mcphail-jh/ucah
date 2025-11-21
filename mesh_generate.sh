@@ -7,8 +7,8 @@ base_journal="basejournal.jou" # template journal file
 base_dir="/scratch/qvu2hx/case"  # main directory for all cases
 ###################################################################
 
-mesh_csv_dir=${base_dir}/${csv_mesh_folder}
-mesh_lst=("${mesh_csv_dir}"/*.msh.h5)
+mesh_csv_dir="${base_dir}/${csv_mesh_folder}"
+mesh_lst=("${mesh_csv_dir}"/*)
 
 mkdir -p "$base_dir"
 counter=0
@@ -18,12 +18,19 @@ tail -n +3 "$csv_file" | while IFS=',' read -r case_name mach alpha beta fx fy f
     
     # Remove potential spaces
     case_name=$(echo "$case_name" | xargs)
+    case_path="${mesh_lst[$counter]}"
+    mesh_path=("${case_path}"/*.msh.h5)
+    
     dir="${base_dir}/${case_name}"
     mkdir -p "$dir"
 
     # Copy mesh
-    cp "${mesh_lst[$counter]}" "$dir/"
-    
+    cp "${mesh_path}" "$dir/"
+
+    if [ -e "${case_path}/*.json" ]; then
+	    cp "${case_path}"/*.json "$dir/"
+    fi
+
     counter=$counter+1
 
     # --- Create journal file ---
