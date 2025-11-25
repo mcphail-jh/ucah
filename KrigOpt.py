@@ -87,6 +87,10 @@ def eval_SM_value(sm: KRG, x: np.array) -> np.array:
         y[i] = sm.y_mean + sm.y_std * (b + y_s)
     return y
 
+def evalPathPoints(x0, dir, bounds, n=100):
+    x_dims = x0.size
+    x = np.linspace(bounds[0], bounds[1], n).reshape([n, 1]) * np.repeat(dir.reshape([1, x_dims]), n, axis=0) + np.repeat(x0.reshape([1, x_dims]), n, axis=0)
+    return x
 
 class KrigOpt:
     _debug : bool # if true, prints extra information during operation.
@@ -121,7 +125,6 @@ class KrigOpt:
         return u.reshape(-1)
 
     def plotPath(self, x0, dir, bounds, n=100, color=None, label=None, var:bool=True):
-
         x = np.linspace(bounds[0], bounds[1], n) + np.dot(x0, dir)
         y = self.evalPathValues(x0, dir, bounds, n)
         line, = plt.plot(x, y, color=color, label=label)
