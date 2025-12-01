@@ -44,8 +44,8 @@ def name_selections(cad_path):
         for face in body.faces:
             # bounding box is 5 x 5 x 5m, so those should be the only faces with area greater than 24m^2
             if face.area.magnitude > 24.0:
-                # assumes nose of missile is facing negative x
-                if (face.normal().x == 1):
+                # assumes nose of missile is facing POSITIVE x
+                if (face.normal().x == -1):
                     outlet.append(face)
                 else:
                     inlet.append(face)
