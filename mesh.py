@@ -11,6 +11,69 @@ import os, sys
 
 NUM_PROCS = 16
 
+def name_selections_symmetrical(cad_path):
+    cad_file_name = os.path.basename(cad_path)
+    folder = os.path.dirname(cad_path)
+    # launch geometry
+    print("Launching Geometry Service...")
+    model = launch_modeler_with_spaceclaim()
+    
+    try:
+        print("Geometry Service launched successfully.")
+
+        # 2. Import the CAD File
+        print(f"Importing CAD file: {cad_file_name}...")
+        
+        # This function returns the active Design object containing all geometry.
+        # Using a dummy file path if the real one isn't found to let the script proceed
+        # in a non-execution environment, but will warn the user.
+        if os.path.exists(cad_path):
+            design = model.open_file(file_path=cad_path, upload_to_server=False, import_options=ImportOptions())
+            print("CAD file imported successfully.")
+        else:
+            raise FileNotFoundError(f"Could not import CAD file at {cad_path}. Check your path and try again.")
+
+        # 3. Access the Imported Geometry
+        body = design.bodies[0]
+
+        # identify name surface regions
+        inlet = []
+        outlet = []
+        vehicle_faces = []
+        symmetry = []
+        for face in body.faces:
+            # bounding box is 5 x 5 x 2.5m, so those should be the only faces with area greater than 12m^2
+            if face.area.magnitude > 12.0:
+                # assumes nose of missile is facing negative x
+                if (face.normal().x == 1):
+                    outlet.append(face)
+                elif (face.normal().y == -1):
+                    symmetry.append(face)
+                else:
+                    inlet.append(face)
+            else:
+                vehicle_faces.append(face)
+
+        if not body:
+            raise Exception("Error: Imported design contains no solid bodies.")
+
+        # 4. Create Named Selection 1: Whole Body Selection
+        # Select the entire body for a simulation part
+        design.create_named_selection("inlet",faces=inlet)
+        design.create_named_selection("outlet",faces=outlet)
+        design.create_named_selection("vehicle",faces=vehicle_faces)
+        design.create_named_selection("symmetry",faces=symmetry)
+        print("Named selections created successfully.")
+
+        # 5. Export the Design with Named Selections
+        named_selections_path = str(design.export_to_pmdb(folder))
+
+        return named_selections_path
+    
+    finally:
+        # regardless of if an error occurs or not, close SpaceClaim
+        model.close()
+
 
 def name_selections(cad_path):
     cad_file_name = os.path.basename(cad_path)
